@@ -37,40 +37,37 @@ class WaypointUpdater(object):
         rospy.Subscriber('/traffic_waypoint', Int32, self.traffic_cb)
         rospy.Subscriber('/obstacle_waypoint', Lane, self.obstacle_cb)
 
-        self.pub = rospy.Publisher('final_waypoints', Lane, queue_size=1)
+        self.pub = rospy.Publisher('/final_waypoints', Lane, queue_size=1)
 
         # TODO: Add other member variables you need below
-        self.world = None
+        self.waypoints = None
         self.ego = None
 
-        self.publish()
         rospy.spin()
 
     def publish(self):
-        rate = rospy.Rate(5)
-        while not rospy.is_shutdown():
-            idx = self.find_next_waypoint()
-            if idx > -1:
-                rospy.loginfo("Next waypoint: {}".format(idx))
-                waypoints = self.world.waypoints + self.world.waypoints
-                waypoints = waypoints[idx:idx+LOOKAHEAD_WPS]
-                for i in range(LOOKAHEAD_WPS):
-                    self.set_waypoint_velocity(waypoints, i, 20)
-                lane = Lane()
-                lane.header.frame_id = '/world'
-                lane.header.stamp = rospy.Time.now()
-                lane.waypoints = waypoints
-                self.pub.publish(lane)
-            rate.sleep()
+        idx = self.find_next_waypoint()
+        if idx > -1 and not rospy.is_shutdown():
+            rospy.loginfo("Next waypoint: {}".format(idx))
+            waypoints = self.waypoints + self.waypoints
+            waypoints = waypoints[idx:idx+LOOKAHEAD_WPS]
+            for i in range(LOOKAHEAD_WPS):
+                self.set_waypoint_velocity(waypoints, i, 20)
+            lane = Lane()
+            lane.header.frame_id = '/world'
+            lane.header.stamp = rospy.Time.now()
+            lane.waypoints = waypoints
+            self.pub.publish(lane)
 
     def pose_cb(self, msg):
         if self.ego is None or self.ego.header.seq < msg.header.seq:
             # TODO: Calculate ego's velocity (and maybe acceleration) if needed
             self.ego = msg
+            self.publish()
 
-    def waypoints_cb(self, waypoints):
-        if self.world is None or self.world.header.seq < waypoints.header.seq:
-            self.world = waypoints
+    def waypoints_cb(self, lane):
+        if self.waypoints is None:
+            self.waypoints = lane.waypoints
 
     def traffic_cb(self, msg):
         # TODO: Callback for /traffic_waypoint message. Implement
@@ -84,22 +81,23 @@ class WaypointUpdater(object):
     def find_next_waypoint(self):
         min_dist = 1e10
         min_idx = -1
-        if self.ego and self.world:
+        if self.ego and self.waypoints:
+            ego_pose = self.ego.pose
             # Find the closest waypoint
-            for i in range(len(self.world.waypoints)):
-                wp = self.world.waypoints[i]
-                dl = self.dist(self.ego.pose.position, wp.pose.pose.position)
+            for i in range(len(self.waypoints)):
+                wp_pos = self.waypoints[i].pose.pose.position
+                dl = self.euclidean(ego_pose.position, wp_pos)
                 if dl < min_dist:
                     min_dist = dl
                     min_idx = i
 
             # Check if we are behind or past the closest waypoint
-            wp = self.world.waypoints[min_idx]
-            pos = self.ego.pose.position
-            pos.x += self.ego.pose.orientation.x
-            pos.y += self.ego.pose.orientation.y
-            if self.dist(wp.pose.pose.position, pos) > min_dist:
-                min_idx = (min_idx + 1) % len(self.world.waypoints)
+            wp_pos = self.waypoints[min_idx].pose.pose.position
+            pos = ego_pose.position
+            pos.x += ego_pose.orientation.x
+            pos.y += ego_pose.orientation.y
+            if self.euclidean(wp_pos, pos) > min_dist:
+                min_idx = (min_idx + 1) % len(self.waypoints)
         return min_idx
 
     @staticmethod
@@ -110,8 +108,8 @@ class WaypointUpdater(object):
     def set_waypoint_velocity(waypoints, waypoint, velocity):
         waypoints[waypoint].twist.twist.linear.x = velocity
 
-    @staticmethod
-    def dist(pos1, pos2):
+    @classmethod
+    def euclidean(cls, pos1, pos2):
         """
         Return the Euclidean distance between two points
 
@@ -122,12 +120,12 @@ class WaypointUpdater(object):
         return math.sqrt((pos1.x - pos2.x) ** 2 + (pos1.y - pos2.y) ** 2 +
                          (pos1.z - pos2.z) ** 2)
 
-    @staticmethod
-    def distance(waypoints, wp1, wp2):
+    @classmethod
+    def distance(cls, waypoints, wp1, wp2):
         dl = 0
         for i in range(wp1, wp2+1):
-            dl += WaypointUpdater.dist(waypoints[wp1].pose.pose.position,
-                                       waypoints[i].pose.pose.position)
+            dl += cls.euclidean(waypoints[wp1].pose.pose.position,
+                                waypoints[i].pose.pose.position)
             wp1 = i
         return dl
 
