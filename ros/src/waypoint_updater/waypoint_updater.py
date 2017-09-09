@@ -65,7 +65,7 @@ class WaypointUpdater(object):
 
     def pose_cb(self, msg):
         if self.ego is None or self.ego.header.seq < msg.header.seq:
-            # TODO: Calculate ego's velocity (and maybe acceleration?) if needed
+            # TODO: Calculate ego's velocity (and maybe acceleration) if needed
             self.ego = msg
 
     def waypoints_cb(self, waypoints):
@@ -114,18 +114,20 @@ class WaypointUpdater(object):
     def dist(pos1, pos2):
         """
         Return the Euclidean distance between two points
-        
-        :param pos1: geometry_msgs/Point 
+
+        :param pos1: geometry_msgs/Point
         :param pos2: geometry_msgs/Point
         :return: Euclidean distance between two points
         """
-        return math.sqrt((pos1.x - pos2.x) ** 2 + (pos1.y - pos2.y) ** 2 + (pos1.z - pos2.z) ** 2)
+        return math.sqrt((pos1.x - pos2.x) ** 2 + (pos1.y - pos2.y) ** 2 +
+                         (pos1.z - pos2.z) ** 2)
 
     @staticmethod
     def distance(waypoints, wp1, wp2):
         dl = 0
         for i in range(wp1, wp2+1):
-            dl += WaypointUpdater.dist(waypoints[wp1].pose.pose.position, waypoints[i].pose.pose.position)
+            dl += WaypointUpdater.dist(waypoints[wp1].pose.pose.position,
+                                       waypoints[i].pose.pose.position)
             wp1 = i
         return dl
 
