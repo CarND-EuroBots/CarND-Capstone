@@ -37,20 +37,22 @@ class WaypointUpdater(object):
         rospy.Subscriber('/traffic_waypoint', Int32, self.traffic_cb)
         rospy.Subscriber('/obstacle_waypoint', Lane, self.obstacle_cb)
 
-        self.final_waypoints_pub = rospy.Publisher('final_waypoints', Lane,
-                                                   queue_size=1)
+        self.pub = rospy.Publisher('final_waypoints', Lane, queue_size=1)
 
         # TODO: Add other member variables you need below
+        self.world = None
+        self.ego = None
 
         rospy.spin()
 
     def pose_cb(self, msg):
-        # TODO: Implement
-        pass
+        if self.ego is None or self.ego.header.seq < msg.header.seq:
+            # TODO: Calculate ego's velocity (and maybe acceleration?) if needed
+            self.ego = msg
 
     def waypoints_cb(self, waypoints):
-        # TODO: Implement
-        pass
+        if self.world is None or self.world.header.seq < waypoints.header.seq:
+            self.world = waypoints
 
     def traffic_cb(self, msg):
         # TODO: Callback for /traffic_waypoint message. Implement
