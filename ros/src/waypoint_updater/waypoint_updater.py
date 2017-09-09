@@ -1,11 +1,13 @@
 #!/usr/bin/env python
 
-import rospy
-from geometry_msgs.msg import PoseStamped
-from styx_msgs.msg import Lane, Waypoint
-from std_msgs.msg import Int32
-
+import copy
 import math
+
+import rospy
+import tf
+from geometry_msgs.msg import PoseStamped
+from std_msgs.msg import Int32
+from styx_msgs.msg import Lane
 
 '''
 This node will publish waypoints from the car's current position
@@ -48,11 +50,12 @@ class WaypointUpdater(object):
     def publish(self):
         idx = self.find_next_waypoint()
         if idx > -1 and not rospy.is_shutdown():
-            rospy.loginfo("Next waypoint: {}".format(idx))
+            rospy.loginfo("Current position ({}, {}), next waypoint: {}"
+                          .format(self.ego.pose.position.x,
+                                  self.ego.pose.position.y,
+                                  idx))
             waypoints = self.waypoints + self.waypoints
             waypoints = waypoints[idx:idx+LOOKAHEAD_WPS]
-            for i in range(LOOKAHEAD_WPS):
-                self.set_waypoint_velocity(waypoints, i, 20)
             lane = Lane()
             lane.header.frame_id = '/world'
             lane.header.stamp = rospy.Time.now()
@@ -78,13 +81,20 @@ class WaypointUpdater(object):
         # We will implement it later
         pass
 
+    @classmethod
+    def yaw_from_quaternion(cls, q):
+        quaternion = [q.x, q.y, q.z, q.w]
+        _, _, yaw = tf.transformations.euler_from_quaternion(quaternion)
+        return yaw
+
     def find_next_waypoint(self):
         min_dist = 1e10
         min_idx = -1
         if self.ego and self.waypoints:
             ego_pose = self.ego.pose
+            n_waypoints = len(self.waypoints)
             # Find the closest waypoint
-            for i in range(len(self.waypoints)):
+            for i in range(n_waypoints):
                 wp_pos = self.waypoints[i].pose.pose.position
                 dl = self.euclidean(ego_pose.position, wp_pos)
                 if dl < min_dist:
@@ -93,11 +103,12 @@ class WaypointUpdater(object):
 
             # Check if we are behind or past the closest waypoint
             wp_pos = self.waypoints[min_idx].pose.pose.position
-            pos = ego_pose.position
-            pos.x += ego_pose.orientation.x
-            pos.y += ego_pose.orientation.y
+            pos = copy.deepcopy(ego_pose.position)
+            yaw = self.yaw_from_quaternion(ego_pose.orientation)
+            pos.x += math.cos(yaw) * .1
+            pos.y += math.sin(yaw) * .1
             if self.euclidean(wp_pos, pos) > min_dist:
-                min_idx = (min_idx + 1) % len(self.waypoints)
+                min_idx = (min_idx + 1) % n_waypoints
         return min_idx
 
     @staticmethod
