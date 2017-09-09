@@ -6,3 +6,6 @@ devel
 profile.tmp
 
 *.bag
+.idea/
+linux_sys_int/
+*.iml
