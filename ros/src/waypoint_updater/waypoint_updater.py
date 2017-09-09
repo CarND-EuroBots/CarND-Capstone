@@ -43,7 +43,25 @@ class WaypointUpdater(object):
         self.world = None
         self.ego = None
 
+        self.publish()
         rospy.spin()
+
+    def publish(self):
+        rate = rospy.Rate(1)
+        while not rospy.is_shutdown():
+            idx = self.find_next_waypoint()
+            if idx > -1:
+                rospy.loginfo("Next waypoint: {}".format(idx))
+                waypoints = self.world.waypoints + self.world.waypoints
+                waypoints = waypoints[idx:idx+LOOKAHEAD_WPS]
+                for i in range(LOOKAHEAD_WPS):
+                    self.set_waypoint_velocity(waypoints, i, 20)
+                lane = Lane()
+                lane.header.frame_id = '/world'
+                lane.header.stamp = rospy.Time.now()
+                lane.waypoints = waypoints
+                self.pub.publish(lane)
+            rate.sleep()
 
     def pose_cb(self, msg):
         if self.ego is None or self.ego.header.seq < msg.header.seq:
