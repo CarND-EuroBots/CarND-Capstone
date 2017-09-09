@@ -63,22 +63,53 @@ class WaypointUpdater(object):
         # We will implement it later
         pass
 
-    def get_waypoint_velocity(self, waypoint):
+    def find_next_waypoint(self):
+        min_dist = 1e10
+        min_idx = -1
+        if self.ego and self.world:
+            # Find the closest waypoint
+            for i in range(len(self.world.waypoints)):
+                wp = self.world.waypoints[i]
+                dl = self.dist(self.ego.pose.position, wp.pose.pose.position)
+                if dl < min_dist:
+                    min_dist = dl
+                    min_idx = i
+
+            # Check if we are behind or past the closest waypoint
+            wp = self.world.waypoints[min_idx]
+            pos = self.ego.pose.position
+            pos.x += self.ego.pose.orientation.x
+            pos.y += self.ego.pose.orientation.y
+            if self.dist(wp.pose.pose.position, pos) > min_dist:
+                min_idx = (min_idx + 1) % len(self.world.waypoints)
+        return min_idx
+
+    @staticmethod
+    def get_waypoint_velocity(waypoint):
         return waypoint.twist.twist.linear.x
 
-    def set_waypoint_velocity(self, waypoints, waypoint, velocity):
+    @staticmethod
+    def set_waypoint_velocity(waypoints, waypoint, velocity):
         waypoints[waypoint].twist.twist.linear.x = velocity
 
-    def distance(self, waypoints, wp1, wp2):
-        def dl(a, b):
-            return math.sqrt((a.x-b.x)**2 + (a.y-b.y)**2 + (a.z-b.z)**2)
+    @staticmethod
+    def dist(pos1, pos2):
+        """
+        Return the Euclidean distance between two points
+        
+        :param pos1: geometry_msgs/Point 
+        :param pos2: geometry_msgs/Point
+        :return: Euclidean distance between two points
+        """
+        return math.sqrt((pos1.x - pos2.x) ** 2 + (pos1.y - pos2.y) ** 2 + (pos1.z - pos2.z) ** 2)
 
-        dist = 0
+    @staticmethod
+    def distance(waypoints, wp1, wp2):
+        dl = 0
         for i in range(wp1, wp2+1):
-            dist += dl(waypoints[wp1].pose.pose.position,
-                       waypoints[i].pose.pose.position)
+            dl += WaypointUpdater.dist(waypoints[wp1].pose.pose.position, waypoints[i].pose.pose.position)
             wp1 = i
-        return dist
+        return dl
 
 
 if __name__ == '__main__':
