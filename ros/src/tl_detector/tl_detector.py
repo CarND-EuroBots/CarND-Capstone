@@ -47,6 +47,8 @@ class TLDetector(object):
 
         self.upcoming_red_light_pub = rospy.Publisher('/traffic_waypoint',
                                                       Int32, queue_size=1)
+        self.cropped_img_pub = rospy.Publisher('/image_cropped',
+                                               Image, queue_size=1)
 
         self.bridge = CvBridge()
         self.light_classifier = TLClassifier()
@@ -237,7 +239,7 @@ class TLDetector(object):
         min_v = max(0, v_center - off_v)
         max_v = min(v_center + off_v, image_height - 1)
 
-        img_traffic_light = cv_image[min_u:max_u][min_v:max_v]
+        img_traffic_light = cv_image[min_u:max_u, min_v:max_v]
 
         # Output
         return img_traffic_light
@@ -263,7 +265,8 @@ class TLDetector(object):
         # Use light location to zoom in on traffic light in image
         img_traffic_light = self.crop_light_image(light, cv_image)
 
-        # TODO(carlos): publish the cropped image on a ROS topic
+        # Publish the cropped image on a ROS topic for debug purposes
+        self.publish_cropped_image(img_traffic_light)
 
         # Get classification
         return self.light_classifier.get_classification(img_traffic_light)
@@ -317,6 +320,7 @@ class TLDetector(object):
                         car_position_wp < tl_waypoint):
                     light_wp = tl_waypoint
                     smallest_tl_distance = distance_between_waypoints
+
         # If waypoint has been found get traffic light state
         if light_wp > -1:
             light = self.waypoints.waypoints[light_wp]
@@ -324,6 +328,13 @@ class TLDetector(object):
             return light_wp, state
 
         return -1, TrafficLight.UNKNOWN
+
+    def publish_cropped_image(self, cropped_image):
+        # Transform from OpenCV image to ROS Image
+        msg = self.bridge.cv2_to_imgmsg(cropped_image, encoding='bgr8')
+
+        # Publish
+        self.cropped_img_pub.publish(msg)
 
 
 if __name__ == '__main__':
