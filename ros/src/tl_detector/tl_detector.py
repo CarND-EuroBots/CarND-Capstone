@@ -24,6 +24,7 @@ class TLDetector(object):
         self.waypoints = None
         self.camera_image = None
         self.lights = []
+        self.tl_waypoints = []
 
         sub1 = rospy.Subscriber('/current_pose', PoseStamped, self.pose_cb)
         sub2 = rospy.Subscriber('/base_waypoints', Lane, self.waypoints_cb)
@@ -129,11 +130,6 @@ class TLDetector(object):
                 # set new distance and new closest waypoint index.
                 closest_waypoint_dist = waypoint_distance
                 closest_waypoint_ind = i
-
-        # It is irrelevant if the closest waypoint is in front or
-        # behind the car because we will need to search for traffic lights
-        #  x meters in front of the car anyway.
-
         return closest_waypoint_ind
 
     def transform_world_to_camera(self, point_in_world):
@@ -272,6 +268,22 @@ class TLDetector(object):
         # Get classification
         return self.light_classifier.get_classification(img_traffic_light)
 
+    def get_tl_waypoints(self):
+        """ Converts list self.config['light_positions'] with trafic
+        light positions to get_closest_waypoint array with PoseStamped
+        traffic light waypoints
+
+        """
+
+        for light_position in self.config['light_positions']:
+            tl_waypoint = PoseStamped()
+            tl_waypoint.pose.position.x = light_position[0]
+            tl_waypoint.pose.position.y = light_position[1]
+            tl_waypoint.pose.position.z = 0
+            self.tl_waypoints.append(
+                self.get_closest_waypoint(tl_waypoint.pose)
+            )
+
     def process_traffic_lights(self):
         """Finds closest visible traffic light, if one exists,
            and determines its location and color
@@ -283,14 +295,31 @@ class TLDetector(object):
                  (specified in styx_msgs/TrafficLight)
 
         """
+
+        # searching_distance_tl parameter sets distance in which
+        # traffic lights will be searched as number of waypoints
+        searching_distance_tl = 120
+
         light = None
-        light_positions = self.config['light_positions']
+        light_wp = -1
         if(self.pose and self.waypoints):
+            # In case that array with traffic light waypoints does not exist,
+            # create it
+            if(self.tl_waypoints == []):
+                self.get_tl_waypoints()
             car_position = self.get_closest_waypoint(self.pose.pose)
-
-        # TODO find the closest visible traffic light (if one exists)
-
-        if light:
+            # Loop thorugh waypoints to find the closest traffic ligt waypoint
+            smallest_tl_distance = 10000
+            for tl_waypoint in self.tl_waypoints:
+                distance_between_waypoints = abs(car_position-tl_waypoint)
+                if(distance_between_waypoints < searching_distance_tl and
+                    distance_between_waypoints < smallest_tl_distance and
+                        car_position < tl_waypoint):
+                    light_wp = tl_waypoint
+                    smallest_tl_distance = distance_between_waypoints
+        # If waypoint has been found get traffic light state
+        if light_wp > -1:
+            light = self.waypoints.waypoints[light_wp]
             state = self.get_light_state(light)
             return light_wp, state
 
