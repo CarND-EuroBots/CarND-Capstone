@@ -104,7 +104,7 @@ class TLDetector(object):
         x, y, z = p1.x - p2.x, p1.y - p2.y, p1.z - p2.z
         return math.sqrt(x*x + y*y + z*z)
 
-    def get_closest_waypoint_wp(self, pose):
+    def get_closest_waypoint_idx(self, pose):
         """Identifies the closest path waypoint to the given position
             https://en.wikipedia.org/wiki/Closest_pair_of_points_problem
         Args:
@@ -270,7 +270,7 @@ class TLDetector(object):
 
     def get_tl_waypoints(self):
         """ Converts list self.config['light_positions'] with trafic
-        light positions to get_closest_waypoint_wp array with PoseStamped
+        light positions to get_closest_waypoint_idx array with PoseStamped
         traffic light waypoints
 
         """
@@ -281,7 +281,7 @@ class TLDetector(object):
             tl_waypoint.pose.position.y = light_position[1]
             tl_waypoint.pose.position.z = 0
             self.tl_waypoints.append(
-                self.get_closest_waypoint_wp(tl_waypoint.pose)
+                self.get_closest_waypoint_idx(tl_waypoint.pose)
             )
 
     def process_traffic_lights(self):
@@ -307,7 +307,7 @@ class TLDetector(object):
             # create it
             if(self.tl_waypoints == []):
                 self.get_tl_waypoints()
-            car_position_wp = self.get_closest_waypoint_wp(self.pose.pose) + 1
+            car_position_wp = self.get_closest_waypoint_idx(self.pose.pose)
             # Loop thorugh waypoints to find the closest traffic ligt waypoint
             smallest_tl_distance = 10000
             for tl_waypoint in self.tl_waypoints:
