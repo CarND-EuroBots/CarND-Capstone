@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<launch>
+    <!-- Logger module -->
+    <arg name="log_dir"/>
+    <include file="$(find tl_ground_truth_logger)/launch/tl_ground_truth_logger.launch">
+        <arg name="log_dir" value="$(arg log_dir)"/>
+    </include>
+
+    <!-- Simulator launch file -->
+    <include file="$(find styx)../../launch/styx.launch"/>
+</launch>

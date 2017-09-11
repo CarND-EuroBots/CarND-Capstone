@@ -47,6 +47,8 @@ class TLDetector(object):
                                                       Int32, queue_size=1)
         self.cropped_img_pub = rospy.Publisher('/image_cropped',
                                                Image, queue_size=1)
+        self.log_pub = rospy.Publisher('/vehicle/visible_light_idx',
+                                       Int32, queue_size=1)
 
         self.bridge = CvBridge()
         self.light_classifier = TLClassifier()
@@ -279,17 +281,19 @@ class TLDetector(object):
             )
 
     def get_distance_in_track(self, a, b, track_length):
-        """Finds the sortest signed distance between a and b,
+        """Finds the shortest signed distance between a and b,
             (b - a), considering the track_length
 
             Example 1
             a = car = 190
             b = light = 10
+            track_length = 200
             output = 20 (in front of the car)
 
             Example 2
             a = car = 10
             b = light = 190
+            track_length = 200
             output = -20 (behind the car)
         """
 
@@ -311,11 +315,14 @@ class TLDetector(object):
             for a traffic light
 
         Returns:
+            light_number: number of the closest light, between 0 and N-1
+                          where N is the number of lights
             light_wp_idx: waypoint index of closest traffic light in range
-
         """
 
         light_wp_idx = -1
+        light_number = -1
+
         # In case that array with traffic light waypoints does not exist,
         # create it
         if(self.tl_waypoints_idx == []):
@@ -323,7 +330,7 @@ class TLDetector(object):
         get_distance_in_track = len(self.waypoints.waypoints)
         # Loop thorugh waypoints to find the closest traffic light waypoint
         smallest_tl_distance = 10000
-        for tl_waypoint_idx in self.tl_waypoints_idx:
+        for i, tl_waypoint_idx in enumerate(self.tl_waypoints_idx):
             # Covered corner case where traffic light is just behind the
             # waypoint 0 and the car is near the last waypoint
             distance_between_wp = self.get_distance_in_track(
@@ -333,9 +340,10 @@ class TLDetector(object):
                 distance_between_wp < smallest_tl_distance and
                     distance_between_wp > 0):
                 light_wp_idx = tl_waypoint_idx
+                light_number = i
                 smallest_tl_distance = distance_between_wp
         # Return index of closest traffic light waypoint in range
-        return light_wp_idx
+        return light_number, light_wp_idx
 
     def process_traffic_lights(self):
         """Finds closest visible traffic light, if one exists,
@@ -353,17 +361,21 @@ class TLDetector(object):
         # traffic lights will be searched as number of waypoints
         searching_dist_tl = 200
         light_wp_idx = -1
+        light_number = -1
         light = None
+
         if(self.pose and self.waypoints):
             car_pos_wp_idx = self.get_closest_waypoint_idx(self.pose.pose)
-            light_wp_idx = self.get_closest_tl_wp_idx(
-                car_pos_wp_idx, searching_dist_tl
-                )
+            light_number, light_wp_idx = self.get_closest_tl_wp_idx(
+                car_pos_wp_idx, searching_dist_tl)
+
         # If waypoint has been found get traffic light state
         if light_wp_idx > -1:
             light = self.waypoints.waypoints[light_wp_idx]
             state = self.get_light_state(light)
-            rospy.loginfo("Traffic ligth detected, tl wp: %s", light_wp_idx)
+            self.log_pub.publish(light_number)
+            rospy.loginfo("Traffic light detected, waypoint number: {}"
+                          .format(light_wp_idx))
             return light_wp_idx, state
 
         return -1, TrafficLight.UNKNOWN
