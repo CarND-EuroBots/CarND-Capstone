@@ -6,8 +6,8 @@ ONE_MPH = 0.44704
 
 
 class Controller(object):
-    def __init__(self, vehicle_mass, decel_limit, accel_limit, wheel_radius, wheel_base,
-                                     steer_ratio, max_lat_accel, max_steer_angle):
+    def __init__(self, vehicle_mass, decel_limit, accel_limit, wheel_radius,
+                 wheel_base, steer_ratio, max_lat_accel, max_steer_angle):
         self.velocity_pid = PID(0.2, 0.004, 3, mn=decel_limit, mx=accel_limit)
         self.steer_pid = PID(0.1, 0.004, 3, mn=-max_steer_angle,
                              mx=max_steer_angle)

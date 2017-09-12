@@ -85,7 +85,7 @@ class DBWNode(object):
         rate = rospy.Rate(1)  # 50Hz
         self.last_time = None
         while not rospy.is_shutdown():
-    # TODO: You should only publish the control commands if dbw is enabled
+            # TODO: only publish the control commands if dbw is enabled
             if self.twist is not None and self.velocity is not None:
                 now = rospy.get_rostime()
                 if self.last_time is not None:
