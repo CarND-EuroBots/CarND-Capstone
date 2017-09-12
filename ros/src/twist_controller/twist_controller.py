@@ -16,6 +16,10 @@ class Controller(object):
         self.vehicle_mass = vehicle_mass
         self.wheel_radius = wheel_radius
 
+    def reset(self):
+        self.velocity_pid.reset()
+        self.steer_pid.reset()
+
     def control(self, twist, velocity, time_diff):
         velocity_cte = twist.twist.linear.x - velocity.twist.linear.x
         linear_acceleration = self.velocity_pid.step(velocity_cte, time_diff)
@@ -23,15 +27,14 @@ class Controller(object):
                                                 twist.twist.angular.z,
                                                 velocity.twist.linear.x)
 
-        if linear_acceleration > 0:
+        if linear_acceleration > 0.0:
             throttle = linear_acceleration
-            brake = 0
+            brake = 0.0
         else:
-            throttle = 0
-            brake = linear_acceleration * self.vehicle_mass * self.wheel_radius
+            throttle = 0.0
+            brake = -linear_acceleration * self.vehicle_mass * self.wheel_radius
 
         steer = 0.0
         brake = 0.0
-        throttle = 1.0
 
         return throttle, brake, steer

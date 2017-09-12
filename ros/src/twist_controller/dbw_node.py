@@ -69,6 +69,12 @@ class DBWNode(object):
         self.twist = None
         self.dbw_enabled = None
 
+        self.last_throttle = 0.0
+        self.last_brake = 0.0
+        self.last_steer = 0.0
+
+        self.last_dbw_enabled = False
+
         # TODO: Subscribe to all the topics you need to
         rospy.Subscriber('/current_velocity', TwistStamped, self.velocity_cb)
         rospy.Subscriber('/twist_cmd', TwistStamped, self.twist_cb)
@@ -89,6 +95,10 @@ class DBWNode(object):
         rate = rospy.Rate(50)  # 50Hz
         self.last_time = None
         while not rospy.is_shutdown():
+            if self.dbw_enabled != self.last_dbw_enabled and \
+               self.dbw_enabled:
+                self.controller.reset()
+
             # TODO: only publish the control commands if dbw is enabled
             if self.twist is not None and self.velocity is not None:
                 now = rospy.get_rostime()
@@ -98,28 +108,35 @@ class DBWNode(object):
                         self.twist, self.velocity, diff.to_sec())
                     self.publish(throttle, brake, steer)
                 self.last_time = now
+
+            self.last_dbw_enabled = self.dbw_enabled
             rate.sleep()
 
     def publish(self, throttle, brake, steer):
         # Do not ever publish throttle and brake at the same time!
         if brake > 0.0:
-            bcmd = BrakeCmd()
-            bcmd.enable = True
-            bcmd.pedal_cmd_type = BrakeCmd.CMD_TORQUE
-            bcmd.pedal_cmd = brake
-            self.brake_pub.publish(bcmd)
+            if brake != self.last_brake:
+                bcmd = BrakeCmd()
+                bcmd.enable = True
+                bcmd.pedal_cmd_type = BrakeCmd.CMD_TORQUE
+                bcmd.pedal_cmd = brake
+                self.brake_pub.publish(bcmd)
+                self.last_brake = brake
         else:
-            tcmd = ThrottleCmd()
-            tcmd.enable = True
-            tcmd.pedal_cmd_type = ThrottleCmd.CMD_PERCENT
-            tcmd.pedal_cmd = throttle
-            self.throttle_pub.publish(tcmd)
+            if throttle != self.last_throttle:
+                tcmd = ThrottleCmd()
+                tcmd.enable = True
+                tcmd.pedal_cmd_type = ThrottleCmd.CMD_PERCENT
+                tcmd.pedal_cmd = throttle
+                self.throttle_pub.publish(tcmd)
+                self.last_throttle = throttle
 
-        scmd = SteeringCmd()
-        scmd.enable = True
-        scmd.steering_wheel_angle_cmd = steer
-        self.steer_pub.publish(scmd)
-
+        if steer != self.last_steer:
+            scmd = SteeringCmd()
+            scmd.enable = True
+            scmd.steering_wheel_angle_cmd = steer
+            self.steer_pub.publish(scmd)
+            self.last_steer = steer
 
 if __name__ == '__main__':
     DBWNode()
