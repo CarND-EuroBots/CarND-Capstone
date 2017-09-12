@@ -22,7 +22,7 @@ class WaypointLoader(object):
 
         self.pub = rospy.Publisher('/base_waypoints', Lane, queue_size=1)
 
-        self.velocity = rospy.get_param('~velocity')
+        self.velocity = self.mph_to_ms(rospy.get_param('~velocity'))
         self.new_waypoint_loader(rospy.get_param('~path'))
         rospy.spin()
 
@@ -37,8 +37,8 @@ class WaypointLoader(object):
     def quaternion_from_yaw(self, yaw):
         return tf.transformations.quaternion_from_euler(0., 0., yaw)
 
-    def get_velocity(self, velocity):
-        return velocity/3.6
+    def mph_to_ms(self, velocity):
+        return velocity * 0.44704
 
     def load_waypoints(self, fname):
         waypoints = []
@@ -51,7 +51,7 @@ class WaypointLoader(object):
                 p.pose.pose.position.z = float(wp['z'])
                 q = self.quaternion_from_yaw(float(wp['yaw']))
                 p.pose.pose.orientation = Quaternion(*q)
-                p.twist.twist.linear.x = float(self.velocity*0.27778)
+                p.twist.twist.linear.x = float(self.velocity)
 
                 waypoints.append(p)
         return self.decelerate(waypoints)
@@ -66,7 +66,7 @@ class WaypointLoader(object):
         for wp in waypoints[:-1][::-1]:
             dist = self.distance(wp.pose.pose.position,
                                  last.pose.pose.position)
-            vel = math.sqrt(2 * MAX_DECEL * dist) * 3.6
+            vel = math.sqrt(2 * MAX_DECEL * dist)
             if vel < 1.:
                 vel = 0.
             wp.twist.twist.linear.x = min(vel, wp.twist.twist.linear.x)
