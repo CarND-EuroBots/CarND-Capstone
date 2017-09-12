@@ -61,26 +61,36 @@ class DBWNode(object):
                                          BrakeCmd, queue_size=1)
 
         # TODO: Create `TwistController` object
-        # self.controller = TwistController(<Arguments you wish to provide>)
+        self.controller = Controller(vehicle_mass, decel_limit, accel_limit, wheel_radius, wheel_base,
+                                     steer_ratio, max_lat_accel, max_steer_angle)
+        self.velocity = None
+        self.twist = None
 
         # TODO: Subscribe to all the topics you need to
+        rospy.Subscriber('/current_velocity', TwistStamped, self.velocity_cb)
+        rospy.Subscriber('/twist_cmd', TwistStamped, self.twist_cb)
+        # rospy.Subscriber('/vehicle/dbw_enabled', Int32, self.traffic_cb)
 
         self.loop()
 
+    def velocity_cb(self, velocity):
+        self.velocity = velocity
+
+    def twist_cb(self, twist):
+        self.twist = twist
+
     def loop(self):
-        rate = rospy.Rate(50)  # 50Hz
+        rate = rospy.Rate(1)  # 50Hz
+        self.last_time = None
         while not rospy.is_shutdown():
-            # TODO: Get predicted throttle, brake, and steering using
-            #       `twist_controller`
-            # You should only publish the control commands if dbw is enabled
-            # throttle, brake, steering = self.controller.control(
-            #                                    <proposed linear velocity>,
-            #                                    <proposed angular velocity>,
-            #                                    <current linear velocity>,
-            #                                    <dbw status>,
-            #                                    <any other argument you need>)
-            # if <dbw is enabled>:
-            #   self.publish(throttle, brake, steer)
+            # TODO: You should only publish the control commands if dbw is enabled
+            if self.twist != None and self.velocity != None:
+                now = rospy.get_rostime()
+                if self.last_time != None:
+                    diff = now - self.last_time
+                    throttle, brake, steer = self.controller.control(self.twist, self.velocity, diff.to_sec())
+                    self.publish(throttle, brake, steer)
+                self.last_time = now
             rate.sleep()
 
     def publish(self, throttle, brake, steer):
