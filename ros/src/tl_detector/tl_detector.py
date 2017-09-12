@@ -257,7 +257,6 @@ class TLDetector(object):
             self.prev_light_loc = None
             return False
 
-        self.camera_image.encoding = "rgb8"
         cv_image = self.bridge.imgmsg_to_cv2(self.camera_image, "bgr8")
 
         # Use light location to zoom in on traffic light in image
