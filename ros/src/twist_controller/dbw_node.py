@@ -61,8 +61,10 @@ class DBWNode(object):
                                          BrakeCmd, queue_size=1)
 
         # TODO: Create `TwistController` object
-        self.controller = Controller(vehicle_mass, decel_limit, accel_limit, wheel_radius, wheel_base,
-                                     steer_ratio, max_lat_accel, max_steer_angle)
+        self.controller = Controller(vehicle_mass, decel_limit, accel_limit,
+                                     wheel_radius, wheel_base,
+                                     steer_ratio, max_lat_accel,
+                                     max_steer_angle)
         self.velocity = None
         self.twist = None
 
@@ -83,12 +85,13 @@ class DBWNode(object):
         rate = rospy.Rate(1)  # 50Hz
         self.last_time = None
         while not rospy.is_shutdown():
-            # TODO: You should only publish the control commands if dbw is enabled
-            if self.twist != None and self.velocity != None:
+    # TODO: You should only publish the control commands if dbw is enabled
+            if self.twist is not None and self.velocity is not None:
                 now = rospy.get_rostime()
-                if self.last_time != None:
+                if self.last_time is not None:
                     diff = now - self.last_time
-                    throttle, brake, steer = self.controller.control(self.twist, self.velocity, diff.to_sec())
+                    throttle, brake, steer = self.controller.control(
+                        self.twist, self.velocity, diff.to_sec())
                     self.publish(throttle, brake, steer)
                 self.last_time = now
             rate.sleep()
