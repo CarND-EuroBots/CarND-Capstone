@@ -138,5 +138,6 @@ class DBWNode(object):
             self.steer_pub.publish(scmd)
             self.last_steer = steer
 
+
 if __name__ == '__main__':
     DBWNode()

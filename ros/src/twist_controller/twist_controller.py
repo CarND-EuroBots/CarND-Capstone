@@ -32,9 +32,9 @@ class Controller(object):
             brake = 0.0
         else:
             throttle = 0.0
-            brake = -linear_acceleration * self.vehicle_mass * self.wheel_radius
+            brake_acceleration = -linear_acceleration
+            brake = brake_acceleration * self.vehicle_mass * self.wheel_radius
 
-        steer = 0.0
         brake = 0.0
 
         return throttle, brake, steer
