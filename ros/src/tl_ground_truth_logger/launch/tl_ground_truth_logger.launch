@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<launch>
+    <arg name="log_dir"/>
+    <node pkg="tl_ground_truth_logger" type="tl_ground_truth_logger.py"
+          name="tl_ground_truth_logger" output="screen" cwd="node"
+          args="$(arg log_dir)"/>
+</launch>
