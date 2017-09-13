@@ -37,7 +37,8 @@ class WaypointLoader(object):
     def quaternion_from_yaw(self, yaw):
         return tf.transformations.quaternion_from_euler(0., 0., yaw)
 
-    def mph_to_ms(self, velocity):
+    @staticmethod
+    def mph_to_ms(velocity):
         return velocity * 0.44704
 
     def load_waypoints(self, fname):

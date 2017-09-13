@@ -9,8 +9,6 @@ class Controller(object):
     def __init__(self, vehicle_mass, decel_limit, accel_limit, wheel_radius,
                  wheel_base, steer_ratio, max_lat_accel, max_steer_angle):
         self.velocity_pid = PID(0.2, 0.0, 3, mn=decel_limit, mx=accel_limit)
-        self.steer_pid = PID(0.1, 0.0, 3, mn=-max_steer_angle,
-                             mx=max_steer_angle)
         self.yawController = YawController(wheel_base, steer_ratio, 5,
                                            max_lat_accel, max_steer_angle)
         self.vehicle_mass = vehicle_mass
@@ -18,7 +16,6 @@ class Controller(object):
 
     def reset(self):
         self.velocity_pid.reset()
-        self.steer_pid.reset()
 
     def control(self, twist, velocity, time_diff):
         velocity_cte = twist.twist.linear.x - velocity.twist.linear.x
@@ -35,6 +32,7 @@ class Controller(object):
             brake_acceleration = -linear_acceleration
             brake = brake_acceleration * self.vehicle_mass * self.wheel_radius
 
+        # TODO remove this when we focus on braking, keep it simple for now
         brake = 0.0
 
         return throttle, brake, steer

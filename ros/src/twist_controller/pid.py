@@ -24,12 +24,13 @@ class PID(object):
 
         val = self.kp * error + self.ki * self.int_val + self.kd * derivative
 
+        # Take into account actuator limits
         if val > self.max:
             val = self.max
         elif val < self.min:
             val = self.min
         else:
-            # Accumulate integral only if did not reach actuator limit
+            # Accumulate integral error only if we didn't reach actuator limits
             self.int_val = integral
 
         self.last_error = error
