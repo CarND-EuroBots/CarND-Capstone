@@ -269,15 +269,38 @@ class TLDetector(object):
         return self.light_classifier.get_classification(img_traffic_light)
 
     def get_tl_waypoints_idx(self):
-        """ Converts array self.lights with trafic
-        light positions to get_closest_waypoint_idx array with PoseStamped
-        traffic light waypoints
+        """ Converts array self.lights with trafic light positions to
+            tl_waypoints_idx array with traffic light waypoint indexes
         """
 
         for light in self.lights:
             self.tl_waypoints_idx.append(
                 self.get_closest_waypoint_idx(light.pose.pose)
             )
+
+    def get_distance_in_track(self, a, b, track_length):
+        """Finds the sortest signed distance between a and b,
+            (b - a), considering the track_length
+
+            Example 1
+            a = car = 190
+            b = light = 10
+            output = 20 (in front of the car)
+
+            Example 2
+            a = car = 10
+            b = light = 190
+            output = -20 (behind the car)
+        """
+
+        output = b - a
+
+        if (output < -0.5 * track_length):
+            output += track_length
+        elif (output > 0.5 * track_length):
+            output -= track_length
+
+        return output
 
     def get_closest_tl_wp_idx(self, car_pos_wp_idx, searching_dist_tl):
         """ Finds closest traffic light waypoint in searching range
@@ -297,29 +320,19 @@ class TLDetector(object):
         # create it
         if(self.tl_waypoints_idx == []):
             self.get_tl_waypoints_idx()
-        # Check distance between car and traffic light to address end of array
-        # issue
-        last_waypoint_index = len(self.waypoints.waypoints) - 1
-        car_distance_from_last_wp = last_waypoint_index - car_pos_wp_idx
-        # Loop thorugh waypoints to find the closest traffic ligt waypoint
+        last_waypoint_idx = len(self.waypoints.waypoints) - 1
+        car_distance_from_last_wp = last_waypoint_idx - car_pos_wp_idx
+        # Loop thorugh waypoints to find the closest traffic light waypoint
         smallest_tl_distance = 10000
         for tl_waypoint_idx in self.tl_waypoints_idx:
-            # Cover corner case where traffic light is just behind the
-            # waypoint 0 And the car is near last waypoint so waypoint
-            # index will reset to 0
-            if(searching_dist_tl > (car_distance_from_last_wp) and
-                    tl_waypoint_idx < searching_dist_tl):
-                distance_between_wp = car_distance_from_last_wp
-                + tl_waypoint_idx
-                car_postion_wp_idx_temp = -1 * car_distance_from_last_wp
-            # In any other case take distance between indexes of traffic
-            # light and car position waypoints
-            else:
-                distance_between_wp = abs(car_pos_wp_idx - tl_waypoint_idx)
-                car_postion_wp_idx_temp = car_pos_wp_idx
+            # Covered corner case where traffic light is just behind the
+            # waypoint 0 and the car is near the last waypoint
+            distance_between_wp = self.get_distance_in_track(
+                    car_pos_wp_idx, tl_waypoint_idx, last_waypoint_idx
+                )
             if(distance_between_wp < searching_dist_tl and
                 distance_between_wp < smallest_tl_distance and
-                    car_postion_wp_idx_temp < tl_waypoint_idx):
+                    distance_between_wp > 0):
                 light_wp_idx = tl_waypoint_idx
                 smallest_tl_distance = distance_between_wp
         # Return index of closest traffic light waypoint in range
@@ -347,15 +360,12 @@ class TLDetector(object):
             light_wp_idx = self.get_closest_tl_wp_idx(
                 car_pos_wp_idx, searching_dist_tl
                 )
-
         # If waypoint has been found get traffic light state
         if light_wp_idx > -1:
             light = self.waypoints.waypoints[light_wp_idx]
             state = self.get_light_state(light)
-            print(light_wp_idx)
+            rospy.loginfo("Traffic ligth detected, tl wp: %s", light_wp_idx)
             return light_wp_idx, state
-        else:
-            print("nowp")
 
         return -1, TrafficLight.UNKNOWN
 
