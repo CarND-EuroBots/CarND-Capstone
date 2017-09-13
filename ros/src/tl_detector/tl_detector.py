@@ -320,15 +320,14 @@ class TLDetector(object):
         # create it
         if(self.tl_waypoints_idx == []):
             self.get_tl_waypoints_idx()
-        last_waypoint_idx = len(self.waypoints.waypoints) - 1
-        car_distance_from_last_wp = last_waypoint_idx - car_pos_wp_idx
+        get_distance_in_track = len(self.waypoints.waypoints)
         # Loop thorugh waypoints to find the closest traffic light waypoint
         smallest_tl_distance = 10000
         for tl_waypoint_idx in self.tl_waypoints_idx:
             # Covered corner case where traffic light is just behind the
             # waypoint 0 and the car is near the last waypoint
             distance_between_wp = self.get_distance_in_track(
-                    car_pos_wp_idx, tl_waypoint_idx, last_waypoint_idx
+                    car_pos_wp_idx, tl_waypoint_idx, get_distance_in_track
                 )
             if(distance_between_wp < searching_dist_tl and
                 distance_between_wp < smallest_tl_distance and
