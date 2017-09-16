@@ -87,6 +87,15 @@ class WaypointUpdater(object):
         _, _, yaw = tf.transformations.euler_from_quaternion(quaternion)
         return yaw
 
+    @classmethod
+    def vector_from_quaternion(cls, q):
+        quaternion = [q.x, q.y, q.z, q.w]
+        roll, pitch, yaw = tf.transformations.euler_from_quaternion(quaternion)
+        x = math.cos(yaw) * math.cos(pitch)
+        y = math.sin(yaw) * math.cos(pitch)
+        z = math.sin(pitch)
+        return x, y, z
+
     def find_next_waypoint(self):
         min_dist = 1e10
         min_idx = -1
@@ -104,9 +113,10 @@ class WaypointUpdater(object):
             # Check if we are behind or past the closest waypoint
             wp_pos = self.waypoints[min_idx].pose.pose.position
             pos = copy.deepcopy(ego_pose.position)
-            yaw = self.yaw_from_quaternion(ego_pose.orientation)
-            pos.x += math.cos(yaw) * .1
-            pos.y += math.sin(yaw) * .1
+            x, y, z = self.vector_from_quaternion(ego_pose.orientation)
+            pos.x += x * .1
+            pos.y += y * .1
+            pos.z += z * .1
             if self.euclidean(wp_pos, pos) > min_dist:
                 min_idx = (min_idx + 1) % n_waypoints
         return min_idx
