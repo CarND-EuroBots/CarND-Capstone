@@ -42,6 +42,8 @@ class WaypointUpdater(object):
 
         self.pub = rospy.Publisher('/final_waypoints', Lane, queue_size=1)
         self.pub_path = rospy.Publisher('/local_path', Path, queue_size=1)
+        self.pub_next = rospy.Publisher('/next_waypoint',
+                                        PoseStamped, queue_size=1)
 
         # TODO: Add other member variables you need below
         self.waypoints = None
@@ -58,6 +60,12 @@ class WaypointUpdater(object):
                                   idx))
             waypoints = self.waypoints + self.waypoints
             waypoints = waypoints[idx:idx+LOOKAHEAD_WPS]
+
+            next_pose = copy.deepcopy(waypoints[0].pose)
+            next_pose.header.frame_id = '/world'
+            next_pose.header.stamp = rospy.Time.now()
+            self.pub_next.publish(next_pose)
+
             lane = Lane()
             lane.header.frame_id = '/world'
             lane.header.stamp = rospy.Time.now()
