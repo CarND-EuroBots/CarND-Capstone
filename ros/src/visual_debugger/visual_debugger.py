@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 import rospy
-from geometry_msgs.msg import PoseStamped
+from geometry_msgs.msg import PoseStamped, Point
 from visualization_msgs.msg import Marker
+from styx_msgs.msg import Lane
 
 
 class VisualDebugger(object):
@@ -9,10 +10,14 @@ class VisualDebugger(object):
         rospy.init_node('visual_debugger')
 
         rospy.Subscriber('/current_pose', PoseStamped, self.pose_cb)
-        self.pub = rospy.Publisher('/visualization_marker',
-                                   Marker, queue_size=1)
-        self.x = 0
-        self.dir = 1
+        rospy.Subscriber('/final_waypoints', Lane, self.waypoints_cb)
+
+        self.pub_vehicle = rospy.Publisher('/vehicle_visualizer',
+                                           Marker, queue_size=1)
+
+        self.pub_waypoints = rospy.Publisher('/waypoints_visualizer',
+                                             Marker, queue_size=1)
+
         rospy.spin()
 
     def pose_cb(self, msg):
@@ -32,6 +37,7 @@ class VisualDebugger(object):
         marker.scale.x = 4.6
         marker.scale.y = 2.6
         marker.scale.z = 1.6
+        marker.pose.position.z = marker.pose.position.z + marker.scale.z
 
         marker.color.r = .0
         marker.color.g = 1.
@@ -40,10 +46,47 @@ class VisualDebugger(object):
 
         marker.lifetime = rospy.Duration(1)
 
-        self.x = self.x + self.dir
-        if self.x > 1000 or self.x < -1000:
-            self.dir = -self.dir
-        self.pub.publish(marker)
+        self.pub_vehicle.publish(marker)
+
+    def waypoints_cb(self, lane):
+        points, line_strip = Marker(), Marker()
+
+        points.header.frame_id = "/world"
+        line_strip.header.frame_id = "/world"
+        points.header.stamp = rospy.Time.now()
+        line_strip.header.stamp = rospy.Time.now()
+
+        points.ns = line_strip.ns = "waypoints"
+        points.action = line_strip.action = Marker.ADD
+        points.pose.orientation.w = 1.
+        line_strip.pose.orientation.w = 1.
+
+        points.id = 0
+        line_strip.id = 1
+
+        points.type = Marker.POINTS
+        line_strip.type = Marker.LINE_STRIP
+
+        points.scale.x = .2
+        points.scale.y = .2
+        line_strip.scale.x = .1
+
+        points.color.g = 1.
+        points.color.a = 1.
+
+        line_strip.color.b = 1.
+        line_strip.color.a = 1.
+
+        for wp in lane.waypoints:
+            p = Point()
+            p.x = wp.pose.pose.position.x
+            p.y = wp.pose.pose.position.y
+
+            points.points.append(p)
+            line_strip.points.append(p)
+
+        self.pub_waypoints.publish(points)
+        self.pub_waypoints.publish(line_strip)
 
 if __name__ == '__main__':
     try:
