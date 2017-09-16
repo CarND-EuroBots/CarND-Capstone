@@ -1,5 +1,0 @@
-<?xml version="1.0"?>
-<launch>
-    <node pkg="visual_debugger" type="visual_debugger.py"
-          name="visual_debugger" output="screen" cwd="node" />
-</launch>

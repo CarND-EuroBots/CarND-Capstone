@@ -4,13 +4,7 @@ Panels:
     Name: Displays
     Property Tree Widget:
       Expanded:
-        - /World Grid1
         - /World Grid1/Offset1
-        - /Vehicle1
-        - /Vehicle1/Namespaces1
-        - /Vehicle Grid1
-        - /Base Waypoints1
-        - /Base Waypoints1/Namespaces1
       Splitter Ratio: 0.714285731
     Tree Height: 826
   - Class: rviz/Selection
@@ -53,14 +47,6 @@ Visualization Manager:
       Plane Cell Count: 320
       Reference Frame: world
       Value: true
-    - Class: rviz/Marker
-      Enabled: true
-      Marker Topic: /vehicle_visualizer
-      Name: Vehicle
-      Namespaces:
-        visual_debugger: true
-      Queue Size: 1
-      Value: true
     - Alpha: 0.5
       Cell Size: 1
       Class: rviz/Grid
@@ -79,13 +65,43 @@ Visualization Manager:
       Plane Cell Count: 10
       Reference Frame: base_link
       Value: true
-    - Class: rviz/Marker
+    - Alpha: 0.699999988
+      Axes Length: 1
+      Axes Radius: 0.100000001
+      Class: rviz/Pose
+      Color: 0; 255; 0
       Enabled: true
-      Marker Topic: /waypoints_visualizer
-      Name: Base Waypoints
-      Namespaces:
-        waypoints: true
-      Queue Size: 1
+      Head Length: 1
+      Head Radius: 1.60000002
+      Name: Vehicle
+      Shaft Length: 3.5999999
+      Shaft Radius: 1
+      Shape: Arrow
+      Topic: /current_pose
+      Unreliable: false
+      Value: true
+    - Alpha: 1
+      Buffer Length: 1
+      Class: rviz/Path
+      Color: 0; 0; 255
+      Enabled: true
+      Head Diameter: 0.150000006
+      Head Length: 0.100000001
+      Length: 0.300000012
+      Line Style: Lines
+      Line Width: 0.0299999993
+      Name: /final_waypoints
+      Offset:
+        X: 0
+        Y: 0
+        Z: 0
+      Pose Color: 0; 0; 255
+      Pose Style: Arrows
+      Radius: 0.0299999993
+      Shaft Diameter: 0.0500000007
+      Shaft Length: 0.400000006
+      Topic: /local_path
+      Unreliable: false
       Value: true
   Enabled: true
   Global Options:
@@ -111,7 +127,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 95.097641
+      Distance: 5.47403812
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.0599999987
         Stereo Focal Distance: 1
@@ -126,10 +142,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.00999999978
-      Pitch: 0.47039789
+      Pitch: 0.654797494
       Target Frame: base_link
       Value: XYOrbit (rviz)
-      Yaw: 2.72540164
+      Yaw: 2.87044454
     Saved: ~
 Window Geometry:
   Displays:
@@ -147,5 +163,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 3191
-  X: 130
-  Y: 60
+  X: 363
+  Y: 599

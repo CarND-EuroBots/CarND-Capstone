@@ -8,6 +8,7 @@ import tf
 from geometry_msgs.msg import PoseStamped
 from std_msgs.msg import Int32
 from styx_msgs.msg import Lane
+from nav_msgs.msg import Path
 
 '''
 This node will publish waypoints from the car's current position
@@ -40,6 +41,7 @@ class WaypointUpdater(object):
         rospy.Subscriber('/obstacle_waypoint', Lane, self.obstacle_cb)
 
         self.pub = rospy.Publisher('/final_waypoints', Lane, queue_size=1)
+        self.pub_path = rospy.Publisher('/local_path', Path, queue_size=1)
 
         # TODO: Add other member variables you need below
         self.waypoints = None
@@ -61,6 +63,13 @@ class WaypointUpdater(object):
             lane.header.stamp = rospy.Time.now()
             lane.waypoints = waypoints
             self.pub.publish(lane)
+
+            # This is needed for visualising in rviz
+            path = Path()
+            path.header.frame_id = '/world'
+            path.header.stamp = rospy.Time.now()
+            path.poses = map(lambda wp: wp.pose, waypoints)
+            self.pub_path.publish(path)
 
     def pose_cb(self, msg):
         if self.ego is None or self.ego.header.seq < msg.header.seq:
