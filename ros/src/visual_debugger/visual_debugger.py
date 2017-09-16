@@ -88,6 +88,7 @@ class VisualDebugger(object):
         self.pub_waypoints.publish(points)
         self.pub_waypoints.publish(line_strip)
 
+
 if __name__ == '__main__':
     try:
         VisualDebugger()
