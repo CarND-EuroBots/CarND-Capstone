@@ -20,4 +20,7 @@
 
     <!--Traffic Light Locations and Camera Config -->
     <param name="traffic_light_config" textfile="$(find tl_detector)/sim_traffic_light_config.yaml" />
+
+    <!--Visual Debugger Node -->
+    <include file="$(find visual_debugger)/launch/visual_debugger.launch"/>
 </launch>
