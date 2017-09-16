@@ -110,7 +110,7 @@ class VisualDebugger(object):
             velocity = wp.twist.twist.linear.x
             p2.x = p.x + x * velocity / 10
             p2.y = p.y + y * velocity / 10
-            p2.z = p.z + z * velocity / 10
+            p2.z = 0.5 + p.z + z * velocity / 10
 
             points.points.append(p)
             line_strip.points.append(p)
