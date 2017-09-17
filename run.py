@@ -38,7 +38,7 @@ def maybe_launch_simulator():
         print('Great, the simulator is already running!')
     else:
         print('Starting the simulator...')
-        subprocess.check_call([os.path.join(ROOT, 'ros', 'src', 'styx',
+        subprocess.call([os.path.join(ROOT, 'ros', 'src', 'styx',
                                             'unity_simulator_launcher.sh')])
 
 def run(launch_file):
@@ -54,11 +54,13 @@ def run(launch_file):
            '--volume=/tmp:/.ros',
            '--volume={}:{}'.format(ROOT, ROOT),
            '--workdir={}'.format(ROOT),
-           '--network=host',
+           # '--network=host',
            '--env=DISPLAY',
+           '-p=4567:4567',
            '--volume=/tmp/.X11-unix:/tmp/.X11-unix',
            'eurobots/carnd_capstone',
-           '/bin/bash', '-c',
+           '/bin/bash',
+           '-c',
            'source /opt/ros/kinetic/setup.bash;'
            'source ros/devel/setup.bash;'
            'roslaunch ros/launch/{}'.format(launch_file)]
