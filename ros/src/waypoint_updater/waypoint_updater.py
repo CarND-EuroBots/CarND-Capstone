@@ -92,10 +92,10 @@ class WaypointUpdater(object):
             idx = (start_idx + i + self.n_waypoints) % self.n_waypoints
             yield copy.deepcopy(self.waypoints[idx])
 
-    def pose_cb(self, msg):
-        if self.ego is None or self.ego.header.seq < msg.header.seq:
+    def pose_cb(self, pose):
+        if self.ego is None or self.ego.header.seq < pose.header.seq:
             # TODO: Calculate ego's velocity (and maybe acceleration) if needed
-            self.ego = msg
+            self.ego = pose
             self.publish()
 
     def waypoints_cb(self, lane):
