@@ -61,9 +61,16 @@ class TLDetector(object):
         # to predict it.
         sub3 = rospy.Subscriber('/vehicle/traffic_lights', TrafficLightArray,
                                 self.traffic_cb, queue_size=1)
+
+        # Set big enough buffer size for the image subscriber
+        image_width = self.config['camera_info']['image_width']
+        image_height = self.config['camera_info']['image_height']
+        image_depth = 3  # RGB
+        buffer_size_img = 2 * (image_width * image_height * image_depth)
+
         sub6 = rospy.Subscriber('/image_color', Image,
                                 self.image_cb, queue_size=1,
-                                buff_size=800*600*3*2)
+                                buff_size=buffer_size_img)
 
         rospy.spin()
 
