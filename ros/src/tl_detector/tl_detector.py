@@ -255,6 +255,9 @@ class TLDetector(object):
                  (specified in styx_msgs/TrafficLight)
 
         """
+        # TODO(Carlos) remove line below once TL detector is working
+        return light.state
+
         if(not self.has_image):
             self.prev_light_loc = None
             return False
@@ -370,10 +373,13 @@ class TLDetector(object):
                 car_pos_wp_idx, searching_dist_tl)
 
         # If waypoint has been found get traffic light state
-        if light_wp_idx > -1:
-            light = self.waypoints.waypoints[light_wp_idx]
+        if light_wp_idx >= 0 and light_number >= 0:
+            light = self.lights[light_number]
             state = self.get_light_state(light)
+
+            # Publish index of nearest visible traffic light (debug)
             self.log_pub.publish(light_number)
+
             rospy.loginfo("Traffic light detected, waypoint number: {}"
                           .format(light_wp_idx))
             return light_wp_idx, state
