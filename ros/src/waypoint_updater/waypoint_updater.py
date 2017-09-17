@@ -28,7 +28,7 @@ verify your TL classifier.
 TODO (for Yousuf and Aaron): Stopline location for each traffic light.
 '''
 
-LOOKAHEAD_WPS = 200  # Number of waypoints we publish
+LOOKAHEAD_WPS = 50  # Number of waypoints we publish
 
 
 class WaypointUpdater(object):
@@ -36,7 +36,8 @@ class WaypointUpdater(object):
         rospy.init_node('waypoint_updater')
 
         rospy.Subscriber('/current_pose', PoseStamped, self.pose_cb)
-        rospy.Subscriber('/base_waypoints', Lane, self.waypoints_cb)
+        self.base_waypoints_sub = \
+            rospy.Subscriber('/base_waypoints', Lane, self.waypoints_cb)
         rospy.Subscriber('/traffic_waypoint', Int32, self.traffic_cb)
         rospy.Subscriber('/obstacle_waypoint', Lane, self.obstacle_cb)
 
@@ -48,18 +49,19 @@ class WaypointUpdater(object):
         # TODO: Add other member variables you need below
         self.waypoints = None
         self.ego = None
+        self.next_idx = -1
 
         rospy.spin()
 
     def publish(self):
-        idx = self.find_next_waypoint()
-        if idx > -1 and not rospy.is_shutdown():
+        self.next_idx = self.find_next_waypoint()
+        if self.next_idx > -1 and not rospy.is_shutdown():
             rospy.loginfo("Current position ({}, {}), next waypoint: {}"
                           .format(self.ego.pose.position.x,
                                   self.ego.pose.position.y,
-                                  idx))
+                                  self.next_idx))
             waypoints = self.waypoints + self.waypoints
-            waypoints = waypoints[idx:idx+LOOKAHEAD_WPS]
+            waypoints = waypoints[self.next_idx:self.next_idx+LOOKAHEAD_WPS]
 
             next_pose = copy.deepcopy(waypoints[0].pose)
             next_pose.header.frame_id = '/world'
@@ -88,6 +90,9 @@ class WaypointUpdater(object):
     def waypoints_cb(self, lane):
         if self.waypoints is None:
             self.waypoints = lane.waypoints
+
+            # Unsubscribe so that waypoint loader stops publishing
+            self.base_waypoints_sub.unregister()
 
     def traffic_cb(self, msg):
         # TODO: Callback for /traffic_waypoint message. Implement
@@ -120,12 +125,15 @@ class WaypointUpdater(object):
             ego_pose = self.ego.pose
             n_waypoints = len(self.waypoints)
             # Find the closest waypoint
-            for i in range(n_waypoints):
-                wp_pos = self.waypoints[i].pose.pose.position
+            for i in range(self.next_idx, self.next_idx + n_waypoints):
+                idx = (i + n_waypoints) % n_waypoints
+                wp_pos = self.waypoints[idx].pose.pose.position
                 dl = self.euclidean(ego_pose.position, wp_pos)
                 if dl < min_dist:
                     min_dist = dl
-                    min_idx = i
+                    min_idx = idx
+                if min_dist < 10 and dl > min_dist:
+                    break
 
             # Check if we are behind or past the closest waypoint
             wp_pos = self.waypoints[min_idx].pose.pose.position
