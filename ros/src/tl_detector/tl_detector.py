@@ -26,6 +26,27 @@ class TLDetector(object):
         self.lights = []
         self.tl_waypoints_idx = []
 
+        config_string = rospy.get_param("/traffic_light_config")
+        self.config = yaml.load(config_string)
+
+        self.bridge = CvBridge()
+        self.light_classifier = TLClassifier()
+        self.listener = tf.TransformListener()
+
+        self.state = TrafficLight.UNKNOWN
+        self.last_state = TrafficLight.UNKNOWN
+        self.last_wp = -1
+        self.state_count = 0
+
+        # ROS publishers
+        self.upcoming_red_light_pub = rospy.Publisher('/traffic_waypoint',
+                                                      Int32, queue_size=1)
+        self.cropped_img_pub = rospy.Publisher('/image_cropped',
+                                               Image, queue_size=1)
+        self.log_pub = rospy.Publisher('/vehicle/visible_light_idx',
+                                       Int32, queue_size=1)
+
+        # ROS subscribers
         sub1 = rospy.Subscriber('/current_pose', PoseStamped,
                                 self.pose_cb, queue_size=1)
         sub2 = rospy.Subscriber('/base_waypoints', Lane,
@@ -43,25 +64,6 @@ class TLDetector(object):
         sub6 = rospy.Subscriber('/image_color', Image,
                                 self.image_cb, queue_size=1,
                                 buff_size=800*600*3*2)
-
-        config_string = rospy.get_param("/traffic_light_config")
-        self.config = yaml.load(config_string)
-
-        self.upcoming_red_light_pub = rospy.Publisher('/traffic_waypoint',
-                                                      Int32, queue_size=1)
-        self.cropped_img_pub = rospy.Publisher('/image_cropped',
-                                               Image, queue_size=1)
-        self.log_pub = rospy.Publisher('/vehicle/visible_light_idx',
-                                       Int32, queue_size=1)
-
-        self.bridge = CvBridge()
-        self.light_classifier = TLClassifier()
-        self.listener = tf.TransformListener()
-
-        self.state = TrafficLight.UNKNOWN
-        self.last_state = TrafficLight.UNKNOWN
-        self.last_wp = -1
-        self.state_count = 0
 
         rospy.spin()
 
