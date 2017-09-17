@@ -41,6 +41,12 @@ def maybe_launch_simulator():
         subprocess.call([os.path.join(ROOT, 'ros', 'src', 'styx',
                                             'unity_simulator_launcher.sh')])
 
+def docker_network_configuration():
+    if platform.startswith('linux'):
+        return '--network=host'
+    else:
+        return '--publish=4567:4567'
+
 def run(launch_file):
     """ Runs the ROS nodes 
         Input: launch_file (string) launch file to run, to be found
@@ -54,13 +60,13 @@ def run(launch_file):
            '--volume=/tmp:/.ros',
            '--volume={}:{}'.format(ROOT, ROOT),
            '--workdir={}'.format(ROOT),
-           # '--network=host',
+           docker_network_configuration(),
            '--env=DISPLAY',
-           '-p=4567:4567',
            '--volume=/tmp/.X11-unix:/tmp/.X11-unix',
            'eurobots/carnd_capstone',
            '/bin/bash',
            '-c',
+           'export ROS_IP=`hostname -I`;'
            'source /opt/ros/kinetic/setup.bash;'
            'source ros/devel/setup.bash;'
            'roslaunch ros/launch/{}'.format(launch_file)]
