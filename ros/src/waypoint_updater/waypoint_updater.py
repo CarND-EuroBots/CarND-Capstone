@@ -104,12 +104,6 @@ class WaypointUpdater(object):
         pass
 
     @classmethod
-    def yaw_from_quaternion(cls, q):
-        quaternion = [q.x, q.y, q.z, q.w]
-        _, _, yaw = tf.transformations.euler_from_quaternion(quaternion)
-        return yaw
-
-    @classmethod
     def vector_from_quaternion(cls, q):
         quaternion = [q.x, q.y, q.z, q.w]
         roll, pitch, yaw = tf.transformations.euler_from_quaternion(quaternion)
