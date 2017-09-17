@@ -8,6 +8,7 @@ import tf
 from geometry_msgs.msg import PoseStamped
 from std_msgs.msg import Int32
 from styx_msgs.msg import Lane
+from nav_msgs.msg import Path
 
 '''
 This node will publish waypoints from the car's current position
@@ -41,6 +42,9 @@ class WaypointUpdater(object):
         rospy.Subscriber('/obstacle_waypoint', Lane, self.obstacle_cb)
 
         self.pub = rospy.Publisher('/final_waypoints', Lane, queue_size=1)
+        self.pub_path = rospy.Publisher('/local_path', Path, queue_size=1)
+        self.pub_next = rospy.Publisher('/next_waypoint',
+                                        PoseStamped, queue_size=1)
 
         # TODO: Add other member variables you need below
         self.waypoints = None
@@ -59,11 +63,23 @@ class WaypointUpdater(object):
             waypoints = self.waypoints + self.waypoints
             waypoints = waypoints[self.next_idx:self.next_idx+LOOKAHEAD_WPS]
 
+            next_pose = copy.deepcopy(waypoints[0].pose)
+            next_pose.header.frame_id = '/world'
+            next_pose.header.stamp = rospy.Time.now()
+            self.pub_next.publish(next_pose)
+
             lane = Lane()
             lane.header.frame_id = '/world'
             lane.header.stamp = rospy.Time.now()
             lane.waypoints = waypoints
             self.pub.publish(lane)
+
+            # This is needed for visualising in rviz
+            path = Path()
+            path.header.frame_id = '/world'
+            path.header.stamp = rospy.Time.now()
+            path.poses = map(lambda wp: wp.pose, waypoints)
+            self.pub_path.publish(path)
 
     def pose_cb(self, msg):
         if self.ego is None or self.ego.header.seq < msg.header.seq:
@@ -88,10 +104,13 @@ class WaypointUpdater(object):
         pass
 
     @classmethod
-    def yaw_from_quaternion(cls, q):
+    def vector_from_quaternion(cls, q):
         quaternion = [q.x, q.y, q.z, q.w]
-        _, _, yaw = tf.transformations.euler_from_quaternion(quaternion)
-        return yaw
+        roll, pitch, yaw = tf.transformations.euler_from_quaternion(quaternion)
+        x = math.cos(yaw) * math.cos(pitch)
+        y = math.sin(yaw) * math.cos(pitch)
+        z = math.sin(pitch)
+        return x, y, z
 
     def find_next_waypoint(self):
         min_dist = 1e10
@@ -113,9 +132,10 @@ class WaypointUpdater(object):
             # Check if we are behind or past the closest waypoint
             wp_pos = self.waypoints[min_idx].pose.pose.position
             pos = copy.deepcopy(ego_pose.position)
-            yaw = self.yaw_from_quaternion(ego_pose.orientation)
-            pos.x += math.cos(yaw) * .1
-            pos.y += math.sin(yaw) * .1
+            x, y, z = self.vector_from_quaternion(ego_pose.orientation)
+            pos.x += x * .1
+            pos.y += y * .1
+            pos.z += z * .1
             if self.euclidean(wp_pos, pos) > min_dist:
                 min_idx = (min_idx + 1) % n_waypoints
         return min_idx
