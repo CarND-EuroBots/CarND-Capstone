@@ -36,6 +36,7 @@ class WaypointUpdater(object):
         rospy.init_node('waypoint_updater')
 
         self.waypoints = None
+        self.n_waypoints = 0
         self.ego = None
         self.next_idx = -1
 
@@ -48,8 +49,9 @@ class WaypointUpdater(object):
         # ROS subscribers
         rospy.Subscriber('/current_pose', PoseStamped,
                          self.pose_cb, queue_size=1)
-        rospy.Subscriber('/base_waypoints', Lane,
-                         self.waypoints_cb, queue_size=1)
+        self.base_waypoints_sub = \
+            rospy.Subscriber('/base_waypoints', Lane,
+                             self.waypoints_cb, queue_size=1)
         rospy.Subscriber('/traffic_waypoint', Int32,
                          self.traffic_cb, queue_size=1)
         rospy.Subscriber('/obstacle_waypoint', Lane,
@@ -64,8 +66,8 @@ class WaypointUpdater(object):
                           .format(self.ego.pose.position.x,
                                   self.ego.pose.position.y,
                                   self.next_idx))
-            waypoints = self.waypoints + self.waypoints
-            waypoints = waypoints[self.next_idx:self.next_idx+LOOKAHEAD_WPS]
+
+            waypoints = list(self.get_lookahead(self.next_idx))
 
             next_pose = copy.deepcopy(waypoints[0].pose)
             next_pose.header.frame_id = '/world'
@@ -85,6 +87,11 @@ class WaypointUpdater(object):
             path.poses = map(lambda wp: wp.pose, waypoints)
             self.pub_path.publish(path)
 
+    def get_lookahead(self, start_idx):
+        for i in range(LOOKAHEAD_WPS):
+            idx = (start_idx + i + self.n_waypoints) % self.n_waypoints
+            yield copy.deepcopy(self.waypoints[idx])
+
     def pose_cb(self, msg):
         if self.ego is None or self.ego.header.seq < msg.header.seq:
             # TODO: Calculate ego's velocity (and maybe acceleration) if needed
@@ -92,8 +99,11 @@ class WaypointUpdater(object):
             self.publish()
 
     def waypoints_cb(self, lane):
-        if self.waypoints is None:
+        if self.waypoints is None and lane.waypoints is not None:
             self.waypoints = lane.waypoints
+            self.n_waypoints = len(lane.waypoints)
+            # Unsubscribe so that waypoint loader stops publishing
+            self.base_waypoints_sub.unregister()
 
     def traffic_cb(self, msg):
         # TODO: Callback for /traffic_waypoint message. Implement
@@ -118,10 +128,9 @@ class WaypointUpdater(object):
         min_idx = -1
         if self.ego and self.waypoints:
             ego_pose = self.ego.pose
-            n_waypoints = len(self.waypoints)
             # Find the closest waypoint
-            for i in range(self.next_idx, self.next_idx + n_waypoints):
-                idx = (i + n_waypoints) % n_waypoints
+            for i in range(self.next_idx, self.next_idx + self.n_waypoints):
+                idx = (i + self.n_waypoints) % self.n_waypoints
                 wp_pos = self.waypoints[idx].pose.pose.position
                 dl = self.euclidean(ego_pose.position, wp_pos)
                 if dl < min_dist:
@@ -138,7 +147,7 @@ class WaypointUpdater(object):
             pos.y += y * .1
             pos.z += z * .1
             if self.euclidean(wp_pos, pos) > min_dist:
-                min_idx = (min_idx + 1) % n_waypoints
+                min_idx = (min_idx + 1) % self.n_waypoints
         return min_idx
 
     @staticmethod
