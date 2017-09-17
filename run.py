@@ -48,7 +48,7 @@ def docker_network_configuration():
         return '--publish=4567:4567'
 
 def run(launch_file):
-    """ Runs the ROS nodes 
+    """ Runs the ROS nodes
         Input: launch_file (string) launch file to run, to be found
                in the ros/launch folder. Additional arguments to the launch
                file are accepted.
@@ -66,7 +66,6 @@ def run(launch_file):
            'eurobots/carnd_capstone',
            '/bin/bash',
            '-c',
-           'export ROS_IP=`hostname -I`;'
            'source /opt/ros/kinetic/setup.bash;'
            'source ros/devel/setup.bash;'
            'roslaunch ros/launch/{}'.format(launch_file)]
