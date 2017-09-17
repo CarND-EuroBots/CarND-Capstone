@@ -27,9 +27,10 @@ class TLGroundTruthLogger(object):
         self.lights = []
 
         rospy.Subscriber('/vehicle/traffic_lights', TrafficLightArray,
-                         self.traffic_cb)
-        rospy.Subscriber('/image_color', Image, self.image_cb)
-        rospy.Subscriber('/vehicle/visible_light_idx', Int32, self.light_cb)
+                         self.traffic_cb, queue_size=1)
+        rospy.Subscriber('/image_color', Image, self.image_cb, queue_size=1)
+        rospy.Subscriber('/vehicle/visible_light_idx', Int32,
+                         self.light_cb, queue_size=1)
 
         rospy.spin()
 
