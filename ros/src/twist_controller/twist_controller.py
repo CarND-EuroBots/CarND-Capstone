@@ -7,13 +7,13 @@ ONE_MPH = 0.44704
 class Controller(object):
     def __init__(self, vehicle_mass, decel_limit, accel_limit, wheel_radius,
                  wheel_base, steer_ratio, max_lat_accel, max_steer_angle,
-                 brake_deadband):
+                 brake_deadband, fuel_capacity):
         self.velocity_pid = PID(0.2, 0.0, 3, mn=decel_limit, mx=accel_limit)
         self.yaw_controller = YawController(wheel_base, steer_ratio, 5,
                                             max_lat_accel, max_steer_angle)
-        self.vehicle_mass = vehicle_mass
         self.wheel_radius = wheel_radius
         self.brake_deadband = brake_deadband
+        self.total_mass = vehicle_mass + fuel_capacity * GAS_DENSITY
 
     def reset(self):
         self.velocity_pid.reset()
@@ -30,11 +30,14 @@ class Controller(object):
             brake_torque = 0.0
         else:
             throttle = 0.0
-
             deceleration = -linear_acceleration
-            brake_deceleration = max(0, deceleration - self.brake_deadband)
-            brake_force = brake_deceleration * self.vehicle_mass
-            brake_torque = brake_force * self.wheel_radius  # [N·m]
+
+            # Do not brake if too small deceleration
+            if deceleration < self.brake_deadband:
+                deceleration = 0.0
+
+            # Compute brake torque, in N·m
+            brake_torque = deceleration * self.total_mass * self.wheel_radius
 
         # TODO remove this when we focus on braking, keep it simple for now
         brake_torque = 0.0
