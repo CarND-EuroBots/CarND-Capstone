@@ -36,7 +36,7 @@ class Controller(object):
             if deceleration < self.brake_deadband:
                 deceleration = 0.0
 
-            # Compute brake torque, in N·m
+            # Compute brake torque, in Nm
             brake_torque = deceleration * self.total_mass * self.wheel_radius
 
         # TODO remove this when we focus on braking, keep it simple for now
