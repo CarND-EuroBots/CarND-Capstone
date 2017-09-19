@@ -35,6 +35,17 @@ class WaypointUpdater(object):
     def __init__(self):
         rospy.init_node('waypoint_updater')
 
+        self.waypoints = None
+        self.ego = None
+        self.next_idx = -1
+
+        # ROS publishers
+        self.pub = rospy.Publisher('/final_waypoints', Lane, queue_size=1)
+        self.pub_path = rospy.Publisher('/local_path', Path, queue_size=1)
+        self.pub_next = rospy.Publisher('/next_waypoint',
+                                        PoseStamped, queue_size=1)
+
+        # ROS subscribers
         rospy.Subscriber('/current_pose', PoseStamped,
                          self.pose_cb, queue_size=1)
         self.base_waypoints_sub = \
@@ -44,16 +55,6 @@ class WaypointUpdater(object):
                          self.traffic_cb, queue_size=1)
         rospy.Subscriber('/obstacle_waypoint', Lane,
                          self.obstacle_cb, queue_size=1)
-
-        self.pub = rospy.Publisher('/final_waypoints', Lane, queue_size=1)
-        self.pub_path = rospy.Publisher('/local_path', Path, queue_size=1)
-        self.pub_next = rospy.Publisher('/next_waypoint',
-                                        PoseStamped, queue_size=1)
-
-        # TODO: Add other member variables you need below
-        self.waypoints = None
-        self.ego = None
-        self.next_idx = -1
 
         rospy.spin()
 
