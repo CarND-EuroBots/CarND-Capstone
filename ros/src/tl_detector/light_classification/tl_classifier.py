@@ -1,3 +1,4 @@
+import rospy
 import tensorflow as tf
 import numpy as np
 from styx_msgs.msg import TrafficLight
@@ -34,7 +35,7 @@ class TLClassifier(object):
                  (specified in styx_msgs/TrafficLight)
 
         """
-        class_votes = np.zeros(3)
+        class_votes = np.zeros(3, dtype=int)
 
         with self.graph.as_default():
             with tf.Session(graph=self.graph) as sess:
@@ -48,15 +49,23 @@ class TLClassifier(object):
                                              feed_dict=feed_dict)
 
                 # Loop over detections and keep the ones with high confidence
-                for i, score in enumerate(scores):
+                for i, score in enumerate(scores[0]):
                     if score > MIN_CLASSIFICATION_CONFIDENCE:
-                        class_votes[classes[i] - 1] += 1
+                        class_votes[int(classes[0][i]) - 1] += 1
 
-                # Pick best class
-                best_class = np.argmax(class_votes) + 1
+                if np.sum(class_votes) == 0:
+                    # No confident votes for any class
+                    output = TrafficLight.UNKNOWN
+                else:
+                    # Pick best class
+                    best_class = np.argmax(class_votes) + 1
 
-                # Return
-                return self.graph_class_to_traffic_light(best_class)
+                    # Return
+                    output = self.graph_class_to_traffic_light(best_class)
+
+                rospy.loginfo('Traffic Light: {}'
+                              .format(self.traffic_light_to_str(output)))
+                return output
 
     @staticmethod
     def graph_class_to_traffic_light(graph_class):
@@ -71,3 +80,13 @@ class TLClassifier(object):
             return TrafficLight.RED
 
         return TrafficLight.UNKNOWN
+
+    @staticmethod
+    def traffic_light_to_str(traffic_light):
+        if traffic_light == TrafficLight.GREEN:
+            return 'GREEN'
+        elif traffic_light == TrafficLight.YELLOW:
+            return 'YELLOW'
+        elif traffic_light == TrafficLight.RED:
+            return 'RED'
+        return 'UNKNOWN'

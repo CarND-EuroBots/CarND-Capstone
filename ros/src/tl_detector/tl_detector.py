@@ -5,6 +5,7 @@ import tf
 import cv2
 import yaml
 import numpy as np
+import os
 from std_msgs.msg import Int32
 from geometry_msgs.msg import PoseStamped, Pose, Point
 from styx_msgs.msg import TrafficLightArray, TrafficLight
@@ -20,7 +21,7 @@ class TLDetector(object):
     def __init__(self):
         rospy.init_node('tl_detector')
 
-        inference_model_path = rospy.get_param('~inference_model')
+        inference_model_path = os.path.abspath(rospy.get_param('~inference_model'))
 
         self.pose = None
         self.waypoints = None
