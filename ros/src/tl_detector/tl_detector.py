@@ -21,7 +21,7 @@ class TLDetector(object):
     def __init__(self):
         rospy.init_node('tl_detector')
 
-        inference_model_path = os.path.abspath(rospy.get_param('~inference_model'))
+        model_path = os.path.abspath(rospy.get_param('~inference_model'))
 
         self.pose = None
         self.waypoints = None
@@ -33,7 +33,7 @@ class TLDetector(object):
         self.config = yaml.load(config_string)
 
         self.bridge = CvBridge()
-        self.light_classifier = TLClassifier(inference_model_path)
+        self.light_classifier = TLClassifier(model_path)
         self.listener = tf.TransformListener()
 
         self.state = TrafficLight.UNKNOWN

@@ -5,6 +5,7 @@ from styx_msgs.msg import TrafficLight
 
 MIN_CLASSIFICATION_CONFIDENCE = 0.85
 
+
 class TLClassifier(object):
     def __init__(self, inference_model_path):
         # Load classifier
@@ -16,13 +17,17 @@ class TLClassifier(object):
                 graph_def.ParseFromString(serialized_graph)
                 tf.import_graph_def(graph_def, name='')
 
-            # Define input and output Tensors for detection_graph
-            self.image_tensor = self.graph.get_tensor_by_name('image_tensor:0')
+            # Get input tensor from the graph
+            self.image_tensor = self.get_tensor('image_tensor:0')
 
-            # Each score represent how level of confidence for each of the objects.
-            # Score is shown on the result image, together with the class label.
-            self.detection_scores = self.graph.get_tensor_by_name('detection_scores:0')
-            self.detection_classes = self.graph.get_tensor_by_name('detection_classes:0')
+            # Get confidence level tensor from the graph
+            self.detection_scores = self.get_tensor('detection_scores:0')
+
+            # Get classification tensor from the graph
+            self.detection_classes = self.get_tensor('detection_classes:0')
+
+    def get_tensor(self, name):
+        return self.graph.get_tensor_by_name(name)
 
     def get_classification(self, image):
         """Determines the color of the traffic light in the image
