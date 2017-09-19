@@ -5,6 +5,7 @@ import tf
 import cv2
 import yaml
 import numpy as np
+import os
 from std_msgs.msg import Int32
 from geometry_msgs.msg import PoseStamped, Pose, Point
 from styx_msgs.msg import TrafficLightArray, TrafficLight
@@ -20,6 +21,8 @@ class TLDetector(object):
     def __init__(self):
         rospy.init_node('tl_detector')
 
+        model_path = os.path.abspath(rospy.get_param('~inference_model'))
+
         self.pose = None
         self.waypoints = None
         self.camera_image = None
@@ -30,7 +33,7 @@ class TLDetector(object):
         self.config = yaml.load(config_string)
 
         self.bridge = CvBridge()
-        self.light_classifier = TLClassifier()
+        self.light_classifier = TLClassifier(model_path)
         self.listener = tf.TransformListener()
 
         self.state = TrafficLight.UNKNOWN
@@ -268,23 +271,14 @@ class TLDetector(object):
                  (specified in styx_msgs/TrafficLight)
 
         """
-        # TODO(Carlos) remove line below once TL detector is working
-        return light.state
-
         if(not self.has_image):
             self.prev_light_loc = None
-            return False
+            return TrafficLight.UNKNOWN
 
         cv_image = self.bridge.imgmsg_to_cv2(self.camera_image, "bgr8")
 
-        # Use light location to zoom in on traffic light in image
-        img_traffic_light = self.crop_light_image(light, cv_image)
-
-        # Publish the cropped image on a ROS topic for debug purposes
-        self.publish_cropped_image(img_traffic_light)
-
         # Get classification
-        return self.light_classifier.get_classification(img_traffic_light)
+        return self.light_classifier.get_classification(cv_image)
 
     def get_tl_waypoints_idx(self):
         """ Converts array self.lights with trafic light positions to
