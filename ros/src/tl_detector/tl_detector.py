@@ -278,7 +278,10 @@ class TLDetector(object):
         cv_image = self.bridge.imgmsg_to_cv2(self.camera_image, "bgr8")
 
         # Get classification
-        return self.light_classifier.get_classification(cv_image)
+        output = self.light_classifier.get_classification(cv_image)
+
+        # TODO(Carlos) use "output" below, when classifier is working OK
+        return light.state
 
     def get_tl_waypoints_idx(self):
         """ Converts array self.lights with trafic light positions to
