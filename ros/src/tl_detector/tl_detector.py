@@ -270,23 +270,14 @@ class TLDetector(object):
                  (specified in styx_msgs/TrafficLight)
 
         """
-        # TODO(Carlos) remove line below once TL detector is working
-        return light.state
-
         if(not self.has_image):
             self.prev_light_loc = None
-            return False
+            return TrafficLight.UNKNOWN
 
         cv_image = self.bridge.imgmsg_to_cv2(self.camera_image, "bgr8")
 
-        # Use light location to zoom in on traffic light in image
-        img_traffic_light = self.crop_light_image(light, cv_image)
-
-        # Publish the cropped image on a ROS topic for debug purposes
-        self.publish_cropped_image(img_traffic_light)
-
         # Get classification
-        return self.light_classifier.get_classification(img_traffic_light)
+        return self.light_classifier.get_classification(cv_image)
 
     def get_tl_waypoints_idx(self):
         """ Converts array self.lights with trafic light positions to

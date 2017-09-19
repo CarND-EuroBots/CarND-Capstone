@@ -1,17 +1,27 @@
 import tensorflow as tf
+import numpy as np
 from styx_msgs.msg import TrafficLight
 
+MIN_CLASSIFICATION_CONFIDENCE = 0.85
 
 class TLClassifier(object):
     def __init__(self, inference_model_path):
         # Load classifier
-        detection_graph = tf.Graph()
-        with detection_graph.as_default():
-          od_graph_def = tf.GraphDef()
-          with tf.gfile.GFile(inference_model_path, 'rb') as fid:
-            serialized_graph = fid.read()
-            od_graph_def.ParseFromString(serialized_graph)
-            tf.import_graph_def(od_graph_def, name='')
+        self.graph = tf.Graph()
+        with self.graph.as_default():
+            graph_def = tf.GraphDef()
+            with tf.gfile.GFile(inference_model_path, 'rb') as fid:
+                serialized_graph = fid.read()
+                graph_def.ParseFromString(serialized_graph)
+                tf.import_graph_def(graph_def, name='')
+
+            # Define input and output Tensors for detection_graph
+            self.image_tensor = self.graph.get_tensor_by_name('image_tensor:0')
+
+            # Each score represent how level of confidence for each of the objects.
+            # Score is shown on the result image, together with the class label.
+            self.detection_scores = self.graph.get_tensor_by_name('detection_scores:0')
+            self.detection_classes = self.graph.get_tensor_by_name('detection_classes:0')
 
     def get_classification(self, image):
         """Determines the color of the traffic light in the image
@@ -24,5 +34,40 @@ class TLClassifier(object):
                  (specified in styx_msgs/TrafficLight)
 
         """
-        # TODO implement light color prediction
+        class_votes = np.zeros(3)
+
+        with self.graph.as_default():
+            with tf.Session(graph=self.graph) as sess:
+                # The model expects images to have shape: [1, None, None, 3]
+                image_np_expanded = np.expand_dims(image, axis=0)
+
+                # Run inference
+                feed_dict = {self.image_tensor: image_np_expanded}
+                (scores, classes) = sess.run([self.detection_scores,
+                                              self.detection_classes],
+                                             feed_dict=feed_dict)
+
+                # Loop over detections and keep the ones with high confidence
+                for i, score in enumerate(scores):
+                    if score > MIN_CLASSIFICATION_CONFIDENCE:
+                        class_votes[classes[i] - 1] += 1
+
+                # Pick best class
+                best_class = np.argmax(class_votes) + 1
+
+                # Return
+                return self.graph_class_to_traffic_light(best_class)
+
+    @staticmethod
+    def graph_class_to_traffic_light(graph_class):
+        """ Converts from a class number as defined in the TensorFlow
+            model, to a class number as defined in styx_msgs/TrafficLight
+        """
+        if graph_class == 1:
+            return TrafficLight.GREEN
+        elif graph_class == 2:
+            return TrafficLight.YELLOW
+        elif graph_class == 3:
+            return TrafficLight.RED
+
         return TrafficLight.UNKNOWN
