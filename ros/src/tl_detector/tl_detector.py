@@ -275,7 +275,12 @@ class TLDetector(object):
             self.prev_light_loc = None
             return TrafficLight.UNKNOWN
 
+        # Get image in OpenCV format
         cv_image = self.bridge.imgmsg_to_cv2(self.camera_image, "bgr8")
+
+        # Convert to RGB since it comes in BGR and DNN was trained on RGB
+        # This takes about 0.20 ms
+        cv_image = cv2.cvtColor(cv_image, cv2.COLOR_BGR2RGB)
 
         # Get classification
         output = self.light_classifier.get_classification(cv_image)
