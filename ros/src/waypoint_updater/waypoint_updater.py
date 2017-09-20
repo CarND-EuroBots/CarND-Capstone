@@ -48,9 +48,8 @@ class WaypointUpdater(object):
         # ROS subscribers
         rospy.Subscriber('/current_pose', PoseStamped,
                          self.pose_cb, queue_size=1)
-        self.base_waypoints_sub = \
-            rospy.Subscriber('/base_waypoints', Lane,
-                             self.waypoints_cb, queue_size=1)
+        rospy.Subscriber('/base_waypoints', Lane,
+                         self.waypoints_cb, queue_size=1)
         rospy.Subscriber('/traffic_waypoint', Int32,
                          self.traffic_cb, queue_size=1)
         rospy.Subscriber('/obstacle_waypoint', Lane,
@@ -95,9 +94,6 @@ class WaypointUpdater(object):
     def waypoints_cb(self, lane):
         if self.waypoints is None:
             self.waypoints = lane.waypoints
-
-            # Unsubscribe so that waypoint loader stops publishing
-            self.base_waypoints_sub.unregister()
 
     def traffic_cb(self, msg):
         # TODO: Callback for /traffic_waypoint message. Implement
