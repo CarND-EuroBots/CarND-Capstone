@@ -344,8 +344,8 @@ class TLDetector(object):
         light_wp_idx = -1
         light_number = -1
 
-        # In case that array with traffic light stop line waypoints does not exist,
-        # create it
+        # In case that array with traffic light stop line waypoints
+        # does not exist, create it
         if(self.tl_waypoints_idx == []):
             self.get_tl_waypoints_idx()
         get_distance_in_track = len(self.waypoints.waypoints)
