@@ -288,10 +288,17 @@ class TLDetector(object):
         """ Converts array self.lights with trafic light positions to
             tl_waypoints_idx array with traffic light waypoint indexes
         """
+        # List of positions that correspond to the line to stop in front of
+        # for a given intersection
+        stop_line_positions = self.config['stop_line_positions']
 
-        for light in self.lights:
+        for stop_line_position in stop_line_positions:
+            stop_line_position_pose = Pose()
+            stop_line_position_pose.position.x = stop_line_position[0]
+            stop_line_position_pose.position.y = stop_line_position[1]
+            stop_line_position_pose.position.z = 0
             self.tl_waypoints_idx.append(
-                self.get_closest_waypoint_idx(light.pose.pose)
+                self.get_closest_waypoint_idx(stop_line_position_pose)
             )
 
     def get_distance_in_track(self, a, b, track_length):
@@ -337,7 +344,7 @@ class TLDetector(object):
         light_wp_idx = -1
         light_number = -1
 
-        # In case that array with traffic light waypoints does not exist,
+        # In case that array with traffic light stop line waypoints does not exist,
         # create it
         if(self.tl_waypoints_idx == []):
             self.get_tl_waypoints_idx()
@@ -377,10 +384,6 @@ class TLDetector(object):
         light_wp_idx = -1
         light_number = -1
         light = None
-
-        # List of positions that correspond to the line to stop in front of
-        # for a given intersection
-        stop_line_positions = self.config['stop_line_positions']
 
         if(self.pose and self.waypoints):
             car_pos_wp_idx = self.get_closest_waypoint_idx(self.pose.pose)
