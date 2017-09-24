@@ -30,7 +30,7 @@ TODO (for Yousuf and Aaron): Stopline location for each traffic light.
 '''
 
 LOOKAHEAD_WPS = 50  # Number of waypoints we publish
-MAX_DECEL = 5.
+MIN_VEL = .1
 
 
 class WaypointUpdater(object):
@@ -43,6 +43,7 @@ class WaypointUpdater(object):
         self.next_idx = -1
         self.tl_idx = -1
         self.max_vel = 0.
+        self.max_dec = abs(rospy.get_param('/dbw_node/decel_limit'))
 
         # ROS publishers
         self.pub = rospy.Publisher('/final_waypoints', Lane, queue_size=1)
@@ -55,9 +56,8 @@ class WaypointUpdater(object):
         # ROS subscribers
         rospy.Subscriber('/current_pose', PoseStamped,
                          self.pose_cb, queue_size=1)
-        self.base_waypoints_sub = \
-            rospy.Subscriber('/base_waypoints', Lane,
-                             self.waypoints_cb, queue_size=1)
+        rospy.Subscriber('/base_waypoints', Lane,
+                         self.waypoints_cb, queue_size=1)
         rospy.Subscriber('/traffic_waypoint', Int32,
                          self.traffic_cb, queue_size=1)
         rospy.Subscriber('/obstacle_waypoint', Lane,
@@ -82,36 +82,49 @@ class WaypointUpdater(object):
             if self.tl_idx > -1:
                 self.decelerate(waypoints)
 
-            next_pose = copy.deepcopy(waypoints[0].pose)
-            next_pose.header.frame_id = '/world'
-            next_pose.header.stamp = rospy.Time.now()
-            self.pub_next.publish(next_pose)
-
             lane = Lane()
             lane.header.frame_id = '/world'
             lane.header.stamp = rospy.Time.now()
             lane.waypoints = waypoints
             self.pub.publish(lane)
 
-            # This is needed for visualising in rviz
-            path = Marker()
-            path.header.frame_id = '/world'
-            path.header.stamp = rospy.Time.now()
-            path.ns = "path"
-            path.id = 0
-            path.action = Marker.ADD
-            path.type = Marker.LINE_LIST
-            path.scale.x = 0.1
-            path.color.r = 1.0
-            path.color.a = 1.0
-            path.points = []
-            for wp in waypoints:
-                pos = copy.deepcopy(wp.pose.pose.position)
-                path.points.append(pos)
-                pos = copy.deepcopy(pos)
-                pos.z = wp.twist.twist.linear.x
-                path.points.append(pos)
-            self.pub_path.publish(path)
+            # Publish to rviz
+            self.publish_next_wp(waypoints[0])
+            self.publish_rviz_path(waypoints)
+
+    def publish_rviz_path(self, waypoints):
+        path = Marker()
+        path.header.frame_id = '/world'
+        path.header.stamp = rospy.Time.now()
+        path.ns = "path"
+        path.id = 0
+        path.action = Marker.ADD
+        path.type = Marker.LINE_LIST
+        path.scale.x = 0.1
+        path.color.r = 1.0
+        path.color.a = 1.0
+        path.points = []
+        for wp in waypoints:
+            pos = copy.deepcopy(wp.pose.pose.position)
+            path.points.append(pos)
+            pos = copy.deepcopy(pos)
+            pos.z = wp.twist.twist.linear.x
+            path.points.append(pos)
+        self.pub_path.publish(path)
+
+    def publish_next_wp(self, wp):
+        # This is needed for visualising in rviz
+        next_pose = copy.deepcopy(wp.pose)
+        next_pose.header.frame_id = '/world'
+        next_pose.header.stamp = rospy.Time.now()
+        self.pub_next.publish(next_pose)
+
+    def publish_next_tl(self, wp):
+        # Send the next TL waypoint to rviz
+        next_tl = copy.deepcopy(wp.pose)
+        next_tl.header.frame_id = '/world'
+        next_tl.header.stamp = rospy.Time.now()
+        self.pub_next_tl.publish(next_tl)
 
     def get_lookahead(self, start_idx):
         for i in range(LOOKAHEAD_WPS):
@@ -126,8 +139,7 @@ class WaypointUpdater(object):
         if self.waypoints is None and lane.waypoints is not None:
             self.waypoints = lane.waypoints
             self.n_waypoints = len(lane.waypoints)
-            # Unsubscribe so that waypoint loader stops publishing
-            self.base_waypoints_sub.unregister()
+
             for wp in lane.waypoints:
                 vel = self.get_waypoint_velocity(wp)
                 self.max_vel = max(vel, self.max_vel)
@@ -136,11 +148,7 @@ class WaypointUpdater(object):
         if msg.data != self.tl_idx:
             self.tl_idx = msg.data
             if self.tl_idx > -1:
-                # Send the next TL waypoint to rviz
-                next_tl = copy.deepcopy(self.waypoints[self.tl_idx].pose)
-                next_tl.header.frame_id = '/world'
-                next_tl.header.stamp = rospy.Time.now()
-                self.pub_next_tl.publish(next_tl)
+                self.publish_next_tl(self.waypoints[self.tl_idx])
 
     def obstacle_cb(self, msg):
         # TODO: Callback for /obstacle_waypoint message.
@@ -229,10 +237,10 @@ class WaypointUpdater(object):
                 prev_vel = self.get_waypoint_velocity(prev_wp)
                 d = self.distance(waypoints, i, i + 1)
                 # Approximate time between two waypoints
-                t = max(d / (prev_vel + MAX_DECEL), .1)
+                t = max(d / (prev_vel + self.max_dec), .1)
                 old_vel = self.get_waypoint_velocity(wp)
-                vel = prev_vel + MAX_DECEL * t
-                vel = vel if vel > .2 else .0
+                vel = prev_vel + self.max_dec * t
+                vel = vel if vel > MIN_VEL else .0
                 if vel > old_vel:
                     break
                 self.set_waypoint_velocity(waypoints, i, vel)
