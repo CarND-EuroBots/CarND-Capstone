@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from __future__ import division
 
 import copy
 import math
@@ -8,7 +9,7 @@ import tf
 from geometry_msgs.msg import PoseStamped
 from std_msgs.msg import Int32
 from styx_msgs.msg import Lane
-from nav_msgs.msg import Path
+from visualization_msgs.msg import Marker
 
 '''
 This node will publish waypoints from the car's current position
@@ -43,7 +44,7 @@ class WaypointUpdater(object):
 
         # ROS publishers
         self.pub = rospy.Publisher('/final_waypoints', Lane, queue_size=1)
-        self.pub_path = rospy.Publisher('/local_path', Path, queue_size=1)
+        self.pub_path = rospy.Publisher('/local_path', Marker, queue_size=1)
         self.pub_next = rospy.Publisher('/next_waypoint',
                                         PoseStamped, queue_size=1)
         self.pub_next_tl = rospy.Publisher('/next_tl',
@@ -63,8 +64,9 @@ class WaypointUpdater(object):
         rospy.spin()
 
     def publish(self):
-        self.next_idx = self.find_next_waypoint()
-        if self.next_idx > -1 and not rospy.is_shutdown():
+        next_idx = self.find_next_waypoint()
+        if -1 < next_idx != self.next_idx and not rospy.is_shutdown():
+            self.next_idx = next_idx
             rospy.loginfo("Current position ({}, {}), next waypoint: {}"
                           .format(self.ego.pose.position.x,
                                   self.ego.pose.position.y,
@@ -84,10 +86,23 @@ class WaypointUpdater(object):
             self.pub.publish(lane)
 
             # This is needed for visualising in rviz
-            path = Path()
+            path = Marker()
             path.header.frame_id = '/world'
             path.header.stamp = rospy.Time.now()
-            path.poses = map(lambda wp: wp.pose, waypoints)
+            path.ns = "path"
+            path.id = 0
+            path.action = Marker.ADD
+            path.type = Marker.LINE_LIST
+            path.scale.x = 0.1
+            path.color.r = 1.0
+            path.color.a = 1.0
+            path.points = []
+            for wp in waypoints:
+                pos = copy.deepcopy(wp.pose.pose.position)
+                path.points.append(pos)
+                pos = copy.deepcopy(pos)
+                pos.z = wp.twist.twist.linear.x
+                path.points.append(pos)
             self.pub_path.publish(path)
 
     def get_lookahead(self, start_idx):
@@ -97,7 +112,6 @@ class WaypointUpdater(object):
 
     def pose_cb(self, pose):
         if self.ego is None or self.ego.header.seq < pose.header.seq:
-            # TODO: Calculate ego's velocity (and maybe acceleration) if needed
             self.ego = pose
             self.publish()
 
@@ -109,13 +123,14 @@ class WaypointUpdater(object):
             self.base_waypoints_sub.unregister()
 
     def traffic_cb(self, msg):
-        self.tl_idx = msg.data
-        if self.tl_idx > -1:
-            next_tl = copy.deepcopy(self.waypoints[self.tl_idx].pose)
-            next_tl.header.frame_id = '/world'
-            next_tl.header.stamp = rospy.Time.now()
-            self.pub_next_tl.publish(next_tl)
-        # self.decelerate()
+        if msg.data != self.tl_idx:
+            self.tl_idx = msg.data
+            if self.tl_idx > -1:
+                # Send the next TL waypoint to rviz
+                next_tl = copy.deepcopy(self.waypoints[self.tl_idx].pose)
+                next_tl.header.frame_id = '/world'
+                next_tl.header.stamp = rospy.Time.now()
+                self.pub_next_tl.publish(next_tl)
 
     def obstacle_cb(self, msg):
         # TODO: Callback for /obstacle_waypoint message.
