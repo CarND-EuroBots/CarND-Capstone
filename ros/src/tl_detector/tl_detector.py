@@ -5,6 +5,7 @@ import tf
 import cv2
 import yaml
 import numpy as np
+import os
 from std_msgs.msg import Int32
 from geometry_msgs.msg import PoseStamped, Pose, Point
 from styx_msgs.msg import TrafficLightArray, TrafficLight
@@ -25,6 +26,12 @@ class TLDetector(object):
         self.camera_image = None
         self.lights = []
         self.tl_waypoints_idx = []
+
+        self.harvest_images = False
+        if self.harvest_images:
+            if not (os.path.exists("./tl_images")):
+                os.mkdir("./tl_images")
+            self.debug_image_count = 0
 
         config_string = rospy.get_param("/traffic_light_config")
         self.config = yaml.load(config_string)
@@ -95,6 +102,12 @@ class TLDetector(object):
         self.has_image = True
         self.camera_image = msg
         light_wp_idx, state = self.process_traffic_lights()
+
+
+        if self.harvest_images:
+            cv_image = self.bridge.imgmsg_to_cv2(self.camera_image, "bgr8")
+            cv2.imwrite("./tl_images/image{}.jpg".format(self.debug_image_count), cv_image)
+            self.debug_image_count += 1
 
         # Publish upcoming red lights at camera frequency.
         # Each predicted state has to occur `STATE_COUNT_THRESHOLD` number
