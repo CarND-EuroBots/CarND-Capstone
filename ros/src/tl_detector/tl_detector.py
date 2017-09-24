@@ -21,6 +21,8 @@ class TLDetector(object):
     def __init__(self):
         rospy.init_node('tl_detector')
 
+        model_path = os.path.abspath(rospy.get_param('~inference_model'))
+
         self.pose = None
         self.waypoints = None
         self.camera_image = None
@@ -37,7 +39,7 @@ class TLDetector(object):
         self.config = yaml.load(config_string)
 
         self.bridge = CvBridge()
-        self.light_classifier = TLClassifier()
+        self.light_classifier = TLClassifier(model_path)
         self.listener = tf.TransformListener()
 
         self.state = TrafficLight.UNKNOWN
@@ -92,7 +94,7 @@ class TLDetector(object):
 
     def image_cb(self, msg):
         """Identifies red lights in the incoming camera image and publishes
-            the index of the waypoint closest to the red light to
+            the index of the waypoint closest to the red light's stop line to
             /traffic_waypoint
 
         Args:
@@ -281,32 +283,34 @@ class TLDetector(object):
                  (specified in styx_msgs/TrafficLight)
 
         """
-        # TODO(Carlos) remove line below once TL detector is working
-        return light.state
-
         if(not self.has_image):
             self.prev_light_loc = None
-            return False
+            return TrafficLight.UNKNOWN
 
-        cv_image = self.bridge.imgmsg_to_cv2(self.camera_image, "bgr8")
-
-        # Use light location to zoom in on traffic light in image
-        img_traffic_light = self.crop_light_image(light, cv_image)
-
-        # Publish the cropped image on a ROS topic for debug purposes
-        self.publish_cropped_image(img_traffic_light)
+        # Get image in OpenCV format
+        cv_image = self.bridge.imgmsg_to_cv2(self.camera_image, "rgb8")
 
         # Get classification
-        return self.light_classifier.get_classification(img_traffic_light)
+        output = self.light_classifier.get_classification(cv_image)
+
+        # TODO(Carlos) use "output" below, when classifier is working OK
+        return light.state
 
     def get_tl_waypoints_idx(self):
         """ Converts array self.lights with trafic light positions to
             tl_waypoints_idx array with traffic light waypoint indexes
         """
+        # List of positions that correspond to the line to stop in front of
+        # for a given intersection
+        stop_line_positions = self.config['stop_line_positions']
 
-        for light in self.lights:
+        for stop_line_position in stop_line_positions:
+            stop_line_position_pose = Pose()
+            stop_line_position_pose.position.x = stop_line_position[0]
+            stop_line_position_pose.position.y = stop_line_position[1]
+            stop_line_position_pose.position.z = 0
             self.tl_waypoints_idx.append(
-                self.get_closest_waypoint_idx(light.pose.pose)
+                self.get_closest_waypoint_idx(stop_line_position_pose)
             )
 
     def get_distance_in_track(self, a, b, track_length):
@@ -352,8 +356,8 @@ class TLDetector(object):
         light_wp_idx = -1
         light_number = -1
 
-        # In case that array with traffic light waypoints does not exist,
-        # create it
+        # In case that array with traffic light stop line waypoints
+        # does not exist, create it
         if(self.tl_waypoints_idx == []):
             self.get_tl_waypoints_idx()
         get_distance_in_track = len(self.waypoints.waypoints)
@@ -379,8 +383,8 @@ class TLDetector(object):
            and determines its location and color
 
         Returns:
-            int: index of waypoint closes to the upcoming traffic light
-                 (-1 if none exists)
+            int: index of waypoint closest to the upcoming stop line for a
+                 traffic light (-1 if none exists)
             int: ID of traffic light color
                  (specified in styx_msgs/TrafficLight)
 
