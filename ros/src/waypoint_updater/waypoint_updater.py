@@ -30,6 +30,7 @@ TODO (for Yousuf and Aaron): Stopline location for each traffic light.
 '''
 
 LOOKAHEAD_WPS = 50  # Number of waypoints we publish
+MAX_DECEL = 5.
 
 
 class WaypointUpdater(object):
@@ -41,6 +42,7 @@ class WaypointUpdater(object):
         self.ego = None
         self.next_idx = -1
         self.tl_idx = -1
+        self.max_vel = 0.
 
         # ROS publishers
         self.pub = rospy.Publisher('/final_waypoints', Lane, queue_size=1)
@@ -73,6 +75,9 @@ class WaypointUpdater(object):
                                   self.next_idx))
 
             waypoints = list(self.get_lookahead(self.next_idx))
+
+            if self.tl_idx > -1:
+                self.decelerate(waypoints)
 
             next_pose = copy.deepcopy(waypoints[0].pose)
             next_pose.header.frame_id = '/world'
@@ -121,6 +126,9 @@ class WaypointUpdater(object):
             self.n_waypoints = len(lane.waypoints)
             # Unsubscribe so that waypoint loader stops publishing
             self.base_waypoints_sub.unregister()
+            for wp in lane.waypoints:
+                vel = self.get_waypoint_velocity(wp)
+                self.max_vel = max(vel, self.max_vel)
 
     def traffic_cb(self, msg):
         if msg.data != self.tl_idx:
@@ -196,11 +204,38 @@ class WaypointUpdater(object):
     @classmethod
     def distance(cls, waypoints, wp1, wp2):
         dl = 0
-        for i in range(wp1, wp2+1):
-            dl += cls.euclidean(waypoints[wp1].pose.pose.position,
-                                waypoints[i].pose.pose.position)
+        n = len(waypoints)
+        for i in range(wp1+1, wp2):
+            dl += cls.euclidean(waypoints[wp1 % n].pose.pose.position,
+                                waypoints[i % n].pose.pose.position)
             wp1 = i
         return dl
+
+    def dist_to_tl(self):
+        diff = self.tl_idx - self.next_idx
+        if diff < 0:
+            diff += self.n_waypoints
+        return diff
+
+    def decelerate(self, waypoints):
+        dist = self.dist_to_tl()
+        if self.tl_idx > - 1 and dist < LOOKAHEAD_WPS:
+            prev_wp = waypoints[dist]
+            self.set_waypoint_velocity(waypoints, dist, 0.)
+            rospy.loginfo("Max velocity in waypoints: {}".format(self.max_vel))
+            for i in range(dist-1, -1, -1):
+                wp = waypoints[i]
+                prev_vel = self.get_waypoint_velocity(prev_wp)
+                d = self.distance(waypoints, i, i + 1)
+                # Approximate time between two waypoints
+                t = max(d / (prev_vel + MAX_DECEL), .1)
+                old_vel = self.get_waypoint_velocity(wp)
+                vel = prev_vel + MAX_DECEL * t
+                vel = vel if vel > .2 else .0
+                if vel > old_vel:
+                    break
+                self.set_waypoint_velocity(waypoints, i, vel)
+                prev_wp = wp
 
 
 if __name__ == '__main__':
