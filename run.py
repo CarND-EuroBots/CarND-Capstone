@@ -47,15 +47,24 @@ def docker_network_configuration():
     else:
         return '--publish=4567:4567'
 
-def run(launch_file):
+def run(launch_file, gpu_enabled):
     """ Runs the ROS nodes
         Input: launch_file (string) launch file to run, to be found
                in the ros/launch folder. Additional arguments to the launch
                file are accepted.
                Example:
                    launch_file = site_bag.launch bag_file:=data/log.bag
+
+               gpu_enabled (boolean) True if GPU support activated
     """
-    cmd = ['docker', 'run', '--rm=true', '--tty=true', '--interactive=true',
+    if gpu_enabled:
+        docker_cmd = 'nvidia-docker'
+        docker_img = 'eurobots/carnd_capstone_gpu'
+    else:
+        docker_cmd = 'docker'
+        docker_img = 'eurobots/carnd_capstone'
+
+    cmd = [docker_cmd, 'run', '--rm=true', '--tty=true', '--interactive=true',
            '--user={}:{}'.format(os.getuid(), os.getgid()),
            '--volume=/tmp:/.ros',
            '--volume={}:{}'.format(ROOT, ROOT),
@@ -63,7 +72,7 @@ def run(launch_file):
            docker_network_configuration(),
            '--env=DISPLAY',
            '--volume=/tmp/.X11-unix:/tmp/.X11-unix',
-           'eurobots/carnd_capstone',
+           docker_img,
            '/bin/bash',
            '-c',
            'source /opt/ros/kinetic/setup.bash;'
@@ -79,6 +88,8 @@ def parse_arguments():
     parser = argparse.ArgumentParser()
 
     parser.add_argument('-b', '--bag', dest='rosbag')
+    parser.add_argument('-g', '--gpu', dest='gpu', action='store_true',
+                        default=False)
 
     return parser.parse_args()
 
@@ -99,7 +110,7 @@ def main():
         maybe_launch_simulator()
 
     # Run the code
-    run(launch_file)
+    run(launch_file, args.gpu)
     return 0
 
 if __name__ == "__main__":
