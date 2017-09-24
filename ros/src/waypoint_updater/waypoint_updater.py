@@ -39,12 +39,15 @@ class WaypointUpdater(object):
         self.n_waypoints = 0
         self.ego = None
         self.next_idx = -1
+        self.tl_idx = -1
 
         # ROS publishers
         self.pub = rospy.Publisher('/final_waypoints', Lane, queue_size=1)
         self.pub_path = rospy.Publisher('/local_path', Path, queue_size=1)
         self.pub_next = rospy.Publisher('/next_waypoint',
                                         PoseStamped, queue_size=1)
+        self.pub_next_tl = rospy.Publisher('/next_tl',
+                                           PoseStamped, queue_size=1)
 
         # ROS subscribers
         rospy.Subscriber('/current_pose', PoseStamped,
@@ -106,8 +109,13 @@ class WaypointUpdater(object):
             self.base_waypoints_sub.unregister()
 
     def traffic_cb(self, msg):
-        # TODO: Callback for /traffic_waypoint message. Implement
-        pass
+        self.tl_idx = msg.data
+        if self.tl_idx > -1:
+            next_tl = copy.deepcopy(self.waypoints[self.tl_idx].pose)
+            next_tl.header.frame_id = '/world'
+            next_tl.header.stamp = rospy.Time.now()
+            self.pub_next_tl.publish(next_tl)
+        # self.decelerate()
 
     def obstacle_cb(self, msg):
         # TODO: Callback for /obstacle_waypoint message.
