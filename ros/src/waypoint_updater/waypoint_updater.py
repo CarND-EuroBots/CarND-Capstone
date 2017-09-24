@@ -63,7 +63,10 @@ class WaypointUpdater(object):
         rospy.Subscriber('/obstacle_waypoint', Lane,
                          self.obstacle_cb, queue_size=1)
 
-        rospy.spin()
+        rate = rospy.Rate(30)
+        while not rospy.is_shutdown():
+            self.publish()
+            rate.sleep()
 
     def publish(self):
         next_idx = self.find_next_waypoint()
@@ -118,7 +121,6 @@ class WaypointUpdater(object):
     def pose_cb(self, pose):
         if self.ego is None or self.ego.header.seq < pose.header.seq:
             self.ego = pose
-            self.publish()
 
     def waypoints_cb(self, lane):
         if self.waypoints is None and lane.waypoints is not None:
@@ -222,7 +224,6 @@ class WaypointUpdater(object):
         if self.tl_idx > - 1 and dist < LOOKAHEAD_WPS:
             prev_wp = waypoints[dist]
             self.set_waypoint_velocity(waypoints, dist, 0.)
-            rospy.loginfo("Max velocity in waypoints: {}".format(self.max_vel))
             for i in range(dist-1, -1, -1):
                 wp = waypoints[i]
                 prev_vel = self.get_waypoint_velocity(prev_wp)
