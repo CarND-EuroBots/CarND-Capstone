@@ -12,7 +12,8 @@ from styx_msgs.msg import TrafficLightArray, TrafficLight
 from styx_msgs.msg import Lane
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge
-from light_classification.tl_classifier import TLClassifier
+from light_classification.tl_classifier_sim import TLClassifierSim
+from light_classification.tl_classifier_site import TLClassifierSite
 
 STATE_COUNT_THRESHOLD = 3
 
@@ -21,7 +22,7 @@ class TLDetector(object):
     def __init__(self):
         rospy.init_node('tl_detector')
 
-        model_path = os.path.abspath(rospy.get_param('~inference_model'))
+        tl_classifier_class = rospy.get_param('~inference_class')
 
         self.pose = None
         self.waypoints = None
@@ -29,11 +30,17 @@ class TLDetector(object):
         self.lights = []
         self.tl_waypoints_idx = []
 
+        self.harvest_images = False
+        if self.harvest_images:
+            if not (os.path.exists("./tl_images")):
+                os.mkdir("./tl_images")
+            self.debug_image_count = 0
+
         config_string = rospy.get_param("/traffic_light_config")
         self.config = yaml.load(config_string)
 
         self.bridge = CvBridge()
-        self.light_classifier = TLClassifier(model_path)
+        self.light_classifier = globals()[tl_classifier_class]()
         self.listener = tf.TransformListener()
 
         self.state = TrafficLight.UNKNOWN
@@ -97,6 +104,9 @@ class TLDetector(object):
         self.camera_image = msg
         light_wp_idx, state = self.process_traffic_lights()
 
+        if self.harvest_images:
+            self.harvest_image(self.camera_image)
+
         # Publish upcoming red lights at camera frequency.
         # Each predicted state has to occur `STATE_COUNT_THRESHOLD` number
         # of times till we start using it.
@@ -112,6 +122,12 @@ class TLDetector(object):
         else:
             self.upcoming_red_light_pub.publish(Int32(self.last_wp))
         self.state_count += 1
+
+    def harvest_image(self, image):
+        cv_image = self.bridge.imgmsg_to_cv2(image, "bgr8")
+        cv2.imwrite("./tl_images/image{}.jpg".format(
+            self.debug_image_count), cv_image)
+        self.debug_image_count += 1
 
     def distance(self, p1, p2):
         """

@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <launch>
     <node pkg="tl_detector" type="tl_detector.py" name="tl_detector" cwd="node">
-        <param name="inference_model" value="models/frozen_inference_graph_site.pb" />
+        <param name="inference_class" value="TLClassifierSite" />
     </node>
     <node pkg="tl_detector" type="light_publisher.py" name="light_publisher" cwd="node"/>
 </launch>
