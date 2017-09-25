@@ -223,10 +223,9 @@ class WaypointUpdater(object):
     def distance(cls, waypoints, wp1, wp2):
         dl = 0
         n = len(waypoints)
-        for i in range(wp1 + 1, wp2 + 1):
-            dl += cls.euclidean(waypoints[wp1 % n].pose.pose.position,
-                                waypoints[i % n].pose.pose.position)
-            wp1 = i
+        for i in range(wp1, wp2):
+            dl += cls.euclidean(waypoints[i % n].pose.pose.position,
+                                waypoints[(i + 1) % n].pose.pose.position)
         return dl
 
     def dist_to_tl(self):
