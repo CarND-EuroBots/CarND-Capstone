@@ -12,7 +12,8 @@ from styx_msgs.msg import TrafficLightArray, TrafficLight
 from styx_msgs.msg import Lane
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge
-from light_classification.tl_classifier import TLClassifier
+from light_classification.tl_classifier_sim import TLClassifierSim
+from light_classification.tl_classifier_site import TLClassifierSite
 
 STATE_COUNT_THRESHOLD = 3
 
@@ -21,7 +22,7 @@ class TLDetector(object):
     def __init__(self):
         rospy.init_node('tl_detector')
 
-        model_path = os.path.abspath(rospy.get_param('~inference_model'))
+        tl_classifier_class = rospy.get_param('~inference_class')
 
         self.pose = None
         self.waypoints = None
@@ -39,7 +40,8 @@ class TLDetector(object):
         self.config = yaml.load(config_string)
 
         self.bridge = CvBridge()
-        self.light_classifier = TLClassifier(model_path)
+        klass = globals()[tl_classifier_class]
+        self.light_classifier = klass()
         self.listener = tf.TransformListener()
 
         self.state = TrafficLight.UNKNOWN
