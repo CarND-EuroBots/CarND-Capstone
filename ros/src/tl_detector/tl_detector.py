@@ -40,8 +40,7 @@ class TLDetector(object):
         self.config = yaml.load(config_string)
 
         self.bridge = CvBridge()
-        klass = globals()[tl_classifier_class]
-        self.light_classifier = klass()
+        self.light_classifier = globals()[tl_classifier_class]()
         self.listener = tf.TransformListener()
 
         self.state = TrafficLight.UNKNOWN

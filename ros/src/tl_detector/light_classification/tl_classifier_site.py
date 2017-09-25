@@ -55,12 +55,12 @@ class TLClassifierSite(object):
             # normalize image
             feed_dict = {self.input_tensor: image}
             image_np_expanded = self.sess.run(self.image_normalized,
-                                         feed_dict=feed_dict)
+                                              feed_dict=feed_dict)
 
             # Run inference
             feed_dict = {self.image_tensor: image_np_expanded}
             classes = self.sess.run(self.classification_tensor,
-                               feed_dict=feed_dict)
+                                    feed_dict=feed_dict)
 
             results = np.squeeze(classes)
 
