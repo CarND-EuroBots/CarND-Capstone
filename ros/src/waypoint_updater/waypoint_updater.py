@@ -29,8 +29,8 @@ verify your TL classifier.
 TODO (for Yousuf and Aaron): Stopline location for each traffic light.
 '''
 
-LOOKAHEAD_WPS = 50  # Number of waypoints we publish
-MIN_VEL = .1
+LOOKAHEAD_WPS = 100  # Number of waypoints we publish
+MIN_VEL = 1.
 
 
 class WaypointUpdater(object):
@@ -223,10 +223,9 @@ class WaypointUpdater(object):
     def distance(cls, waypoints, wp1, wp2):
         dl = 0
         n = len(waypoints)
-        for i in range(wp1+1, wp2):
-            dl += cls.euclidean(waypoints[wp1 % n].pose.pose.position,
-                                waypoints[i % n].pose.pose.position)
-            wp1 = i
+        for i in range(wp1, wp2):
+            dl += cls.euclidean(waypoints[i % n].pose.pose.position,
+                                waypoints[(i + 1) % n].pose.pose.position)
         return dl
 
     def dist_to_tl(self):
@@ -238,17 +237,19 @@ class WaypointUpdater(object):
     def decelerate(self, waypoints):
         dist = self.dist_to_tl()
         if self.tl_idx > - 1 and dist < LOOKAHEAD_WPS:
-            prev_wp = waypoints[dist]
-            self.set_waypoint_velocity(waypoints, dist, 0.)
-            for i in range(dist-1, -1, -1):
+            prev_idx = max(dist-2, 0)
+            prev_wp = waypoints[prev_idx]
+            for i in range(prev_idx, LOOKAHEAD_WPS):
+                self.set_waypoint_velocity(waypoints, i, 0.)
+
+            for i in range(prev_idx-1, -1, -1):
                 wp = waypoints[i]
-                prev_vel = self.get_waypoint_velocity(prev_wp)
                 d = self.distance(waypoints, i, i + 1)
-                # Approximate time between two waypoints
-                t = max(d / (prev_vel + self.max_dec), .1)
+                prev_vel = self.get_waypoint_velocity(prev_wp)
+                vel = math.sqrt(2 * self.max_dec * d + prev_vel**2)
+                if vel < MIN_VEL:
+                    vel = 0.
                 old_vel = self.get_waypoint_velocity(wp)
-                vel = prev_vel + self.max_dec * t
-                vel = vel if vel > MIN_VEL else .0
                 if vel > old_vel:
                     break
                 self.set_waypoint_velocity(waypoints, i, vel)
