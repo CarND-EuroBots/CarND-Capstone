@@ -6,6 +6,7 @@ from styx_msgs.msg import TrafficLight
 MIN_CLASSIFICATION_CONFIDENCE = 0.85
 INFERENCE_MODEL_PATH = 'models/frozen_inference_graph_sim.pb'
 
+
 class TLClassifierSim(object):
     def __init__(self):
         # Load classifier
