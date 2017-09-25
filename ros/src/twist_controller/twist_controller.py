@@ -39,7 +39,4 @@ class Controller(object):
             # Compute brake torque, in Nm
             brake_torque = deceleration * self.total_mass * self.wheel_radius
 
-        # TODO remove this when we focus on braking, keep it simple for now
-        brake_torque = 0.0
-
         return throttle, brake_torque, steer
