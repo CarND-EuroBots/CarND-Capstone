@@ -26,6 +26,8 @@ class TLClassifierSim(object):
             # Get classification tensor from the graph
             self.detection_classes = self.get_tensor('detection_classes:0')
 
+            self.sess = tf.Session(graph=self.graph)
+
     def get_tensor(self, name):
         return self.graph.get_tensor_by_name(name)
 
@@ -43,34 +45,33 @@ class TLClassifierSim(object):
         class_votes = np.zeros(3, dtype=int)
 
         with self.graph.as_default():
-            with tf.Session(graph=self.graph) as sess:
-                # The model expects images to have shape: [1, None, None, 3]
-                image_np_expanded = np.expand_dims(image, axis=0)
+            # The model expects images to have shape: [1, None, None, 3]
+            image_np_expanded = np.expand_dims(image, axis=0)
 
-                # Run inference
-                feed_dict = {self.image_tensor: image_np_expanded}
-                (scores, classes) = sess.run([self.detection_scores,
-                                              self.detection_classes],
-                                             feed_dict=feed_dict)
+            # Run inference
+            feed_dict = {self.image_tensor: image_np_expanded}
+            (scores, classes) = self.sess.run([self.detection_scores,
+                                               self.detection_classes],
+                                              feed_dict=feed_dict)
 
-                # Loop over detections and keep the ones with high confidence
-                for i, score in enumerate(scores[0]):
-                    if score > MIN_CLASSIFICATION_CONFIDENCE:
-                        class_votes[int(classes[0][i]) - 1] += 1
+            # Loop over detections and keep the ones with high confidence
+            for i, score in enumerate(scores[0]):
+                if score > MIN_CLASSIFICATION_CONFIDENCE:
+                    class_votes[int(classes[0][i]) - 1] += 1
 
-                if np.sum(class_votes) == 0:
-                    # No confident votes for any class
-                    output = TrafficLight.UNKNOWN
-                else:
-                    # Pick best class
-                    best_class = np.argmax(class_votes) + 1
+            if np.sum(class_votes) == 0:
+                # No confident votes for any class
+                output = TrafficLight.UNKNOWN
+            else:
+                # Pick best class
+                best_class = np.argmax(class_votes) + 1
 
-                    # Return
-                    output = self.graph_class_to_traffic_light(best_class)
+                # Return
+                output = self.graph_class_to_traffic_light(best_class)
 
-                rospy.loginfo('Traffic Light: {}'
-                              .format(self.traffic_light_to_str(output)))
-                return output
+            rospy.loginfo('Traffic Light: {}'
+                          .format(self.traffic_light_to_str(output)))
+            return output
 
     @staticmethod
     def graph_class_to_traffic_light(graph_class):
