@@ -107,10 +107,7 @@ class TLDetector(object):
         light_wp_idx, state = self.process_traffic_lights()
 
         if self.harvest_images:
-            cv_image = self.bridge.imgmsg_to_cv2(self.camera_image, "bgr8")
-            cv2.imwrite("./tl_images/image{}.jpg".format(
-                self.debug_image_count), cv_image)
-            self.debug_image_count += 1
+            self.harvest_image(self.camera_image)
 
         # Publish upcoming red lights at camera frequency.
         # Each predicted state has to occur `STATE_COUNT_THRESHOLD` number
@@ -127,6 +124,12 @@ class TLDetector(object):
         else:
             self.upcoming_red_light_pub.publish(Int32(self.last_wp))
         self.state_count += 1
+
+    def harvest_image(self, image):
+        cv_image = self.bridge.imgmsg_to_cv2(image, "bgr8")
+        cv2.imwrite("./tl_images/image{}.jpg".format(
+            self.debug_image_count), cv_image)
+        self.debug_image_count += 1
 
     def distance(self, p1, p2):
         """
