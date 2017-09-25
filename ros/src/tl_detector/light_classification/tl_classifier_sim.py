@@ -4,7 +4,7 @@ import numpy as np
 from styx_msgs.msg import TrafficLight
 
 MIN_CLASSIFICATION_CONFIDENCE = 0.85
-inference_model_path = 'models/frozen_inference_graph_sim.pb'
+INFERENCE_MODEL_PATH = 'models/frozen_inference_graph_sim.pb'
 
 class TLClassifierSim(object):
     def __init__(self):
@@ -12,7 +12,7 @@ class TLClassifierSim(object):
         self.graph = tf.Graph()
         with self.graph.as_default():
             graph_def = tf.GraphDef()
-            with tf.gfile.GFile(inference_model_path, 'rb') as fid:
+            with tf.gfile.GFile(INFERENCE_MODEL_PATH, 'rb') as fid:
                 serialized_graph = fid.read()
                 graph_def.ParseFromString(serialized_graph)
                 tf.import_graph_def(graph_def, name='')
