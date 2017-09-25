@@ -66,6 +66,8 @@ class DBWNode(object):
         self.last_dbw_enabled = False
         self.last_time = None
 
+        self.last_action = ''
+
         # ROS publishers
         self.steer_pub = rospy.Publisher('/vehicle/steering_cmd',
                                          SteeringCmd, queue_size=1)
@@ -133,24 +135,42 @@ class DBWNode(object):
             rospy.loginfo('Resetting Controller')
 
     def publish(self, throttle, brake, steer):
-        # Do not ever publish throttle and brake at the same time!
-        if brake > 0.0:
-            bcmd = BrakeCmd()
-            bcmd.enable = True
-            bcmd.pedal_cmd_type = BrakeCmd.CMD_TORQUE
-            bcmd.pedal_cmd = brake
-            self.brake_pub.publish(bcmd)
-        else:
-            tcmd = ThrottleCmd()
-            tcmd.enable = True
-            tcmd.pedal_cmd_type = ThrottleCmd.CMD_PERCENT
-            tcmd.pedal_cmd = throttle
-            self.throttle_pub.publish(tcmd)
+        # Create brake command
+        bcmd = BrakeCmd()
+        bcmd.enable = True
+        bcmd.pedal_cmd_type = BrakeCmd.CMD_TORQUE
+        bcmd.pedal_cmd = brake
 
+        # Create throttle command
+        tcmd = ThrottleCmd()
+        tcmd.enable = True
+        tcmd.pedal_cmd_type = ThrottleCmd.CMD_PERCENT
+        tcmd.pedal_cmd = throttle
+
+        # Create steering command
         scmd = SteeringCmd()
         scmd.enable = True
         scmd.steering_wheel_angle_cmd = steer
+
+        # Publish
+        # NOTE: do not publish throttle and brake at the same time,
+        # unless we switch from one to the other (to prevent the simulator
+        # from keeping the last value)
+        action = 'brake' if brake > 0.0 else 'throttle'
+
+        if action != self.last_action:
+            self.brake_pub.publish(bcmd)
+            self.throttle_pub.publish(tcmd)
+
+        elif action == 'brake':
+            self.brake_pub.publish(bcmd)
+
+        elif action == 'throttle':
+            self.throttle_pub.publish(tcmd)
+
         self.steer_pub.publish(scmd)
+
+        self.last_action = action
 
 
 if __name__ == '__main__':
