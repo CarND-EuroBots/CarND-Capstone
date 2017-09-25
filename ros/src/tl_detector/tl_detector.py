@@ -44,8 +44,6 @@ class TLDetector(object):
         # ROS publishers
         self.upcoming_red_light_pub = rospy.Publisher('/traffic_waypoint',
                                                       Int32, queue_size=1)
-        self.cropped_img_pub = rospy.Publisher('/image_cropped',
-                                               Image, queue_size=1)
         self.log_pub = rospy.Publisher('/vehicle/visible_light_idx',
                                        Int32, queue_size=1)
 
@@ -149,116 +147,6 @@ class TLDetector(object):
                 closest_waypoint_dist = waypoint_distance
                 closest_waypoint_ind = i
         return closest_waypoint_ind
-
-    def transform_world_to_camera(self, point_in_world):
-        """
-        Transforms a point from 3D world coordinates to 3D camera coordinates
-        Args:
-            point_in_world (Point): 3D location of a point in the world
-
-        Returns:
-            point_in_camera (Point): 3D location of a point in the camera frame
-        """
-        # Get transform between pose of camera and world frame
-        trans = None
-        try:
-            now = rospy.Time.now()
-            self.listener.waitForTransform("/base_link", "/world", now,
-                                           rospy.Duration(1.0))
-            (trans, rot) = self.listener.lookupTransform("/base_link",
-                                                         "/world", now)
-
-        except (tf.Exception, tf.LookupException, tf.ConnectivityException):
-            rospy.logerr("Failed to find camera to map transform")
-
-        # Create transformation matrix
-        T = self.listener.fromTranslationRotation(trans, rot)
-
-        # Transform point from world to camera using homogeneous coordinates
-        point_in_world_h = np.array([[point_in_world.x],
-                                     [point_in_world.y],
-                                     [point_in_world.z],
-                                     [1.0]])
-
-        point_in_camera_h = np.dot(T, point_in_world_h)
-
-        # Output as a Point
-        point_in_camera = Point(point_in_camera_h[0][0],
-                                point_in_camera_h[1][0],
-                                point_in_camera_h[2][0])
-        return point_in_camera
-
-    def project_to_image_plane(self, point_in_camera):
-        """
-        Projects point from 3D camera coordinates to 2D camera image location
-
-        Args:
-            point_in_camera (Point): 3D location of a point in the camera
-
-        Returns:
-            u (int): u coordinate of target point in image
-            v (int): v coordinate of target point in image
-
-        """
-        # Get camera intrinsics
-        fx = self.config['camera_info']['focal_length_x']
-        fy = self.config['camera_info']['focal_length_y']
-
-        # Project to image plane to get u,v image coordinates
-        # Note that X is pointing forward, Y to the left and Z up
-        u = int(-(fx / point_in_camera.x) * point_in_camera.y)
-        v = int(-(fy / point_in_camera.x) * point_in_camera.z)
-
-        return (u, v)
-
-    def crop_light_image(self, light, cv_image):
-        """
-        Crops the input image to keep only the part that
-        contains the requested traffic light
-
-        Args:
-            light (TrafficLight): light to get image of
-            cv_image (cv2 image): image to crop
-
-        Returns:
-            img_traffic_light (cv2 image): the cropped image
-        """
-        # Get light center in camera coordinates
-        light_pos_world = light.pose.pose.position
-        light_pos_camera = self.transform_world_to_camera(light_pos_world)
-
-        # Get coordinate of top-left corner of bounding box
-        corner = Point(light_pos_camera.x,
-                       light_pos_camera.y,
-                       light_pos_camera.z)
-
-        LIGHT_CROP_OFFSET_Y = 0.25  # [m]
-        LIGHT_CROP_OFFSET_Z = 0.5   # [m]
-
-        corner.y += LIGHT_CROP_OFFSET_Y
-        corner.z += LIGHT_CROP_OFFSET_Z
-
-        # Project the previous points to the image plane
-        u_center, v_center = self.project_to_image_plane(light_pos_camera)
-        u_corner, v_corner = self.project_to_image_plane(corner)
-
-        # Compute offset w.r.t. center
-        off_u = abs(u_center - u_corner)
-        off_v = abs(v_center - v_corner)
-
-        # Crop the image to get the traffic light only
-        image_width = self.config['camera_info']['image_width']
-        image_height = self.config['camera_info']['image_height']
-
-        min_u = max(0, u_center - off_u)
-        max_u = min(u_center + off_u, image_width - 1)
-        min_v = max(0, v_center - off_v)
-        max_v = min(v_center + off_v, image_height - 1)
-
-        img_traffic_light = cv_image[min_u:max_u, min_v:max_v]
-
-        # Output
-        return img_traffic_light
 
     def get_light_state(self, light):
         """Determines the current color of the traffic light
@@ -403,15 +291,6 @@ class TLDetector(object):
             return light_wp_idx, state
 
         return -1, TrafficLight.UNKNOWN
-
-    def publish_cropped_image(self, cropped_image):
-        if cropped_image.shape[0] > 0 and \
-           cropped_image.shape[1] > 0:
-            # Transform from OpenCV image to ROS Image
-            msg = self.bridge.cv2_to_imgmsg(cropped_image, encoding='bgr8')
-
-            # Publish
-            self.cropped_img_pub.publish(msg)
 
 
 if __name__ == '__main__':
