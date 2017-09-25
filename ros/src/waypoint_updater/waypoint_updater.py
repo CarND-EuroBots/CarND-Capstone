@@ -37,13 +37,15 @@ class WaypointUpdater(object):
     def __init__(self):
         rospy.init_node('waypoint_updater')
 
+        self.max_vel = rospy.get_param('/waypoint_loader/velocity')
+        self.max_dec = abs(rospy.get_param('/dbw_node/decel_limit'))
+        self.max_acc = rospy.get_param('/dbw_node/accel_limit')
+
         self.waypoints = None
         self.n_waypoints = 0
         self.ego = None
         self.next_idx = -1
         self.tl_idx = -1
-        self.max_vel = 0.
-        self.max_dec = abs(rospy.get_param('/dbw_node/decel_limit'))
 
         # ROS publishers
         self.pub = rospy.Publisher('/final_waypoints', Lane, queue_size=1)
@@ -139,10 +141,6 @@ class WaypointUpdater(object):
         if self.waypoints is None and lane.waypoints is not None:
             self.waypoints = lane.waypoints
             self.n_waypoints = len(lane.waypoints)
-
-            for wp in lane.waypoints:
-                vel = self.get_waypoint_velocity(wp)
-                self.max_vel = max(vel, self.max_vel)
 
     def traffic_cb(self, msg):
         if msg.data != self.tl_idx:
