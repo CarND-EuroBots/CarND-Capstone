@@ -110,7 +110,8 @@ class TLDetector(object):
 
         if self.harvest_images:
             cv_image = self.bridge.imgmsg_to_cv2(self.camera_image, "bgr8")
-            cv2.imwrite("./tl_images/image{}.jpg".format(self.debug_image_count), cv_image)
+            cv2.imwrite("./tl_images/image{}.jpg".format(
+                self.debug_image_count), cv_image)
             self.debug_image_count += 1
 
         # Publish upcoming red lights at camera frequency.
