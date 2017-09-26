@@ -73,7 +73,7 @@ class WaypointUpdater(object):
 
     def publish(self):
         next_idx = self.find_next_waypoint()
-        if -1 < next_idx != self.next_idx and not rospy.is_shutdown():
+        if -1 < next_idx and not rospy.is_shutdown():
             self.next_idx = next_idx
             rospy.loginfo("Current position ({}, {}), next waypoint: {}"
                           .format(self.ego.pose.position.x,
