@@ -241,7 +241,7 @@ class WaypointUpdater(object):
     def decelerate(self, waypoints):
         dist = self.dist_to_tl()
         if self.tl_idx > - 1 and dist < LOOKAHEAD_WPS:
-            prev_idx = max(dist-2, 0)
+            prev_idx = max(dist-4, 0)
             prev_wp = waypoints[prev_idx]
             for i in range(prev_idx, LOOKAHEAD_WPS):
                 self.set_waypoint_velocity(waypoints, i, 0.)
