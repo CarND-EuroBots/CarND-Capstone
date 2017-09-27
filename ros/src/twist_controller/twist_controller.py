@@ -4,6 +4,7 @@ from yaw_controller import YawController
 GAS_DENSITY = 2.858
 FULL_BRAKE_SPEED = 0.1  # If target velocity is smaller, apply full brake
 
+
 class Controller(object):
     def __init__(self, vehicle_mass, decel_limit, accel_limit, wheel_radius,
                  wheel_base, steer_ratio, max_lat_accel, max_steer_angle,
