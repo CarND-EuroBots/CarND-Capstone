@@ -7,7 +7,7 @@ This is the project repo for the final project of the Udacity Self-Driving Car N
 |   Name        |   Udacity account email     |
 |---------------|-----------------------------|
 | Carlos Galvez | carlosgalvezp@gmail.com     |
-| TODO          | TODO                        |
+| Marko Sarkanj | marko.sarkanj@gmail.com     |
 | TODO          | TODO                        |
 | TODO          | TODO                        |
 
