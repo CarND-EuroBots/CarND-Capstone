@@ -72,11 +72,9 @@ class WaypointUpdater(object):
             rate.sleep()
 
     def publish(self):
-        next_idx = self.find_next_waypoint()
-        dist = self.dist_to_tl()
-        refresh = next_idx != self.next_idx or 10 > dist > -1
-        if -1 < next_idx and refresh and not rospy.is_shutdown():
-            self.next_idx = next_idx
+        self.next_idx = self.find_next_waypoint()
+        if -1 < self.next_idx and not rospy.is_shutdown():
+
             rospy.loginfo("Current position ({}, {}), next waypoint: {}"
                           .format(self.ego.pose.position.x,
                                   self.ego.pose.position.y,
