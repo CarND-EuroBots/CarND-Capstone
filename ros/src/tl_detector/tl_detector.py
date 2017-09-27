@@ -185,8 +185,7 @@ class TLDetector(object):
         # Get classification
         output = self.light_classifier.get_classification(cv_image)
 
-        # TODO(Carlos) use "output" below, when classifier is working OK
-        return light.state
+        return output  # light.state
 
     def get_tl_waypoints_idx(self):
         """ Converts array self.lights with trafic light positions to
