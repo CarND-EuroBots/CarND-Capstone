@@ -31,6 +31,7 @@ TODO (for Yousuf and Aaron): Stopline location for each traffic light.
 
 LOOKAHEAD_WPS = 100  # Number of waypoints we publish
 MIN_VEL = 1.
+STOP_AHEAD = 4  # Number of waypoints ahead of TL the car should stop
 
 
 class WaypointUpdater(object):
@@ -72,9 +73,9 @@ class WaypointUpdater(object):
             rate.sleep()
 
     def publish(self):
-        next_idx = self.find_next_waypoint()
-        if -1 < next_idx and not rospy.is_shutdown():
-            self.next_idx = next_idx
+        self.next_idx = self.find_next_waypoint()
+        if -1 < self.next_idx and not rospy.is_shutdown():
+
             rospy.loginfo("Current position ({}, {}), next waypoint: {}"
                           .format(self.ego.pose.position.x,
                                   self.ego.pose.position.y,
@@ -229,6 +230,8 @@ class WaypointUpdater(object):
         return dl
 
     def dist_to_tl(self):
+        if self.tl_idx == -1 or self.next_idx == -1:
+            return -1
         diff = self.tl_idx - self.next_idx
         if diff < 0:
             diff += self.n_waypoints
@@ -237,7 +240,7 @@ class WaypointUpdater(object):
     def decelerate(self, waypoints):
         dist = self.dist_to_tl()
         if self.tl_idx > - 1 and dist < LOOKAHEAD_WPS:
-            prev_idx = max(dist-2, 0)
+            prev_idx = max(dist-STOP_AHEAD, 0)
             prev_wp = waypoints[prev_idx]
             for i in range(prev_idx, LOOKAHEAD_WPS):
                 self.set_waypoint_velocity(waypoints, i, 0.)
