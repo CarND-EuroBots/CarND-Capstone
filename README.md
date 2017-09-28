@@ -4,12 +4,12 @@ This is the project repo for the final project of the Udacity Self-Driving Car N
 
 ### Team Members
 
-|   Name        |   Udacity account email       |
-|---------------|-------------------------------|
-| Carlos Galvez | carlosgalvezp@gmail.com       |
-| Marko Sarkanj | marko.sarkanj@gmail.com       |
-| Oren Meiri    | oren.meiri@gmail.com          |
-| Ivan Danov    | ivan.geo.danov (at) gmail.com |
+|   Name        |   Udacity account email            |
+|---------------|------------------------------------|
+| Carlos Galvez | carlosgalvezp (at) gmail.com       |
+| Marko Sarkanj | marko.sarkanj (at) gmail.com       |
+| Oren Meiri    | oren.meiri (at) gmail.com          |
+| Ivan Danov    | ivan.geo.danov (at) gmail.com      |
 
 ### Quick usage, without need to install any dependencies
 
