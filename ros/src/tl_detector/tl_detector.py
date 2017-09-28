@@ -17,6 +17,15 @@ from light_classification.tl_classifier_site import TLClassifierSite
 
 STATE_COUNT_THRESHOLD = 3
 
+# This parameter applies only to the real camera, which has correct
+# fx/fy values. The real value is 33 deg, but we overestimate in case the
+# provided data is not correct.
+# The simulator has more zoom so the following value is an overestimation,
+# so it's okey.
+# Reference:
+# https://www.edmundoptics.com/resources/application-notes/imaging/understanding-focal-length-and-field-of-view/
+CAMERA_FOV = math.radians(40.0)
+
 
 class TLDetector(object):
     def __init__(self):
@@ -294,7 +303,8 @@ class TLDetector(object):
                 car_pos_wp_idx, searching_dist_tl)
 
         # If waypoint has been found get traffic light state
-        if light_wp_idx >= 0 and light_number >= 0:
+        if light_wp_idx >= 0 and light_number >= 0 and \
+           self.is_light_within_fov(self.lights[light_number]):
             light = self.lights[light_number]
             state = self.get_light_state(light)
 
@@ -306,6 +316,52 @@ class TLDetector(object):
             return light_wp_idx, state
 
         return -1, TrafficLight.UNKNOWN
+
+    def is_light_within_fov(self, light):
+        """
+        Determines whether the light is within the FOV of the camera
+
+        Args:
+            light (TrafficLight) - light to consider
+
+        Returns: true if the light is within the FOV of the camera
+        """
+        # Get position of traffic light and ego
+        light_pos = light.pose.pose.position
+        ego_pos = self.pose.pose.position
+
+        # Get ego heading
+        q = self.pose.pose.orientation
+        q_array = [q.x, q.y, q.z, q.w]
+        _, _, ego_heading = tf.transformations.euler_from_quaternion(q_array)
+
+        # Create vector from ego to light and compute its heading
+        v_ego_to_light = [light_pos.x - ego_pos.x, light_pos.y - ego_pos.y]
+        ego_to_light_heading = math.atan2(v_ego_to_light[1], v_ego_to_light[0])
+
+        # Compute bearing to light
+        bearing = self.angle_difference(ego_heading, ego_to_light_heading)
+
+        # Check if it's within FOV
+        return abs(bearing) < 0.5 * CAMERA_FOV
+
+    @staticmethod
+    def angle_difference(a, b):
+        """
+        Computes the shortest signed angle between two angles a and b
+
+        Args:
+            a (float) first angle
+            b (float) second angle
+        """
+        output = b - a
+
+        if (output < -math.pi):
+            output += 2.0 * math.pi
+        elif (output > math.pi):
+            output -= 2.0 * math.pi
+
+        return output
 
 
 if __name__ == '__main__':
