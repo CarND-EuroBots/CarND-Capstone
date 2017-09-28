@@ -40,7 +40,7 @@ class WaypointUpdater(object):
 
         max_vel = rospy.get_param('/waypoint_loader/velocity')
         self.max_vel = self.mph2ms(max_vel)
-        self.max_dec = abs(rospy.get_param('/dbw_node/decel_limit'))
+        self.max_dec = 0.8 * abs(rospy.get_param('/dbw_node/decel_limit'))
         self.max_acc = rospy.get_param('/dbw_node/accel_limit')
 
         self.waypoints = None
