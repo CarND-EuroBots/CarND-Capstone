@@ -8,7 +8,7 @@ This is the project repo for the final project of the Udacity Self-Driving Car N
 |---------------|-----------------------------|
 | Carlos Galvez | carlosgalvezp@gmail.com     |
 | Marko Sarkanj | marko.sarkanj@gmail.com     |
-| TODO          | TODO                        |
+| Oren Meiri    | oren.meiri@gmail.com        |
 | TODO          | TODO                        |
 
 ### Quick usage, without need to install any dependencies
