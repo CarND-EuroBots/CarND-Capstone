@@ -11,7 +11,7 @@ class Controller(object):
                  brake_deadband, fuel_capacity, max_throttle_percent):
         self.velocity_pid = PID(1.5, 0.001, 0.,
                                 mn=decel_limit, mx=max_throttle_percent)
-        self.yaw_controller = YawController(wheel_base, steer_ratio, 5,
+        self.yaw_controller = YawController(wheel_base, steer_ratio, 1,
                                             max_lat_accel, max_steer_angle)
         self.wheel_radius = wheel_radius
         self.brake_deadband = brake_deadband
