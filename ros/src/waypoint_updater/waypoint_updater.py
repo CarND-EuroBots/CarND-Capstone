@@ -38,10 +38,7 @@ class WaypointUpdater(object):
     def __init__(self):
         rospy.init_node('waypoint_updater')
 
-        max_vel = rospy.get_param('/waypoint_loader/velocity')
-        self.max_vel = self.mph2ms(max_vel)
-        self.max_dec = abs(rospy.get_param('/dbw_node/decel_limit'))
-        self.max_acc = rospy.get_param('/dbw_node/accel_limit')
+        self.max_dec = 0.8 * abs(rospy.get_param('/dbw_node/decel_limit'))
 
         self.waypoints = None
         self.n_waypoints = 0
@@ -190,15 +187,6 @@ class WaypointUpdater(object):
             if self.euclidean(wp_pos, pos) > min_dist:
                 min_idx = (min_idx + 1) % self.n_waypoints
         return min_idx
-
-    @staticmethod
-    def mph2ms(velocity_mph):
-        """
-        Converts velocity from mph to m/s
-        :param velocity_mph: input velocity in mph
-        :return: velocity in m/s
-        """
-        return velocity_mph * 0.44704
 
     @staticmethod
     def get_waypoint_velocity(waypoint):
