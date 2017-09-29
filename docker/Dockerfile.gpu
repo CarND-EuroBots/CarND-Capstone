@@ -2,4 +2,4 @@ FROM eurobots/carnd_capstone:latest
 
 # Uninstall TensorFlow (CPU) and install TensorFlow GPU
 RUN pip uninstall --yes tensorflow  && \
-    pip install --upgrade tensorflow-gpu
+    pip install --ignore-installed tensorflow-gpu==1.0.0
