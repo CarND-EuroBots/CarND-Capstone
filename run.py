@@ -90,6 +90,8 @@ def parse_arguments():
     parser.add_argument('-b', '--bag', dest='rosbag')
     parser.add_argument('-g', '--gpu', dest='gpu', action='store_true',
                         default=False)
+    parser.add_argument('-c', '--carla', dest='carla', action='store_true',
+                        default=False)
 
     return parser.parse_args()
 
@@ -105,6 +107,9 @@ def main():
     if args.rosbag:
         rosbag_full_path = os.path.abspath(args.rosbag)
         launch_file = 'site_bag.launch bag_file:={}'.format(rosbag_full_path)
+    elif args.carla:
+        launch_file = 'site.launch'
+        args.gpu = True  # GPU available in Carla
     else:
         launch_file = 'styx.launch'
         maybe_launch_simulator()
