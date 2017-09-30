@@ -4,21 +4,44 @@ This is the project repo for the final project of the Udacity Self-Driving Car N
 
 ### Team Members
 
-|   Name        |   Udacity account email            |
-|---------------|------------------------------------|
-| Carlos Galvez | carlosgalvezp (at) gmail.com       |
-| Marko Sarkanj | marko.sarkanj (at) gmail.com       |
-| Oren Meiri    | oren.meiri (at) gmail.com          |
-| Ivan Danov    | ivan.geo.danov (at) gmail.com      |
+|   Name                        |   Udacity account email            |
+|-------------------------------|------------------------------------|
+| Carlos Galvez (**Team Lead**) | carlosgalvezp (at) gmail.com       |
+| Marko Sarkanj                 | marko.sarkanj (at) gmail.com       |
+| Oren Meiri                    | oren.meiri (at) gmail.com          |
+| Ivan Danov                    | ivan.geo.danov (at) gmail.com      |
 
-### Quick usage, without need to install any dependencies
+### Quick setup using Docker
 
-* Build and run code and simulator:
+Follow these steps to setup the development/runtime environment
+without having to install any dependencies, except for Docker.
+NOTE: currently supported only on Linux and OSX.
+
+* Install dependencies:
+
+ - [docker](https://docs.docker.com/engine/installation/linux/docker-ce/ubuntu)
+ - [nvidia-docker](https://github.com/NVIDIA/nvidia-docker#ubuntu-distributions)
+
+* Build and run code on simulator (CPU only):
 
       $ ./run.py
 
+* Build and run code on simulator, with GPU acceleration
 
-### Installation
+      $ ./run.py --gpu
+
+* Build and run code using a `rosbag`:
+
+      $ ./run.py --rosbag <path_to_rosbag>
+
+* Build and run code on Carla (GPU always enabled):
+
+      $ ./run.py --carla
+
+
+### Native installation
+
+Follow these steps to have a native installation (only supported on Ubuntu).
 
 * Be sure that your workstation is running Ubuntu 16.04 Xenial Xerus or Ubuntu 14.04 Trusty Tahir. [Ubuntu downloads can be found here](https://www.ubuntu.com/download/desktop). 
 * If using a Virtual Machine to install Ubuntu, use the following configuration as minimum:
