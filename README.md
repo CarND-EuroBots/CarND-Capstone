@@ -19,14 +19,15 @@ NOTE: currently supported only on Linux and OSX.
 
 * Install dependencies:
 
-  - [docker](https://docs.docker.com/engine/installation/linux/docker-ce/ubuntu)
-  - [nvidia-docker](https://github.com/NVIDIA/nvidia-docker#ubuntu-distributions)
+  - [docker](https://docs.docker.com/engine/installation).
+  - [nvidia-docker](https://github.com/NVIDIA/nvidia-docker#ubuntu-distributions).
+    Only supported on Ubuntu, to get GPU acceleration.
 
 * Build and run code on simulator (CPU only):
 
       $ ./run.py
 
-* Build and run code on simulator, with GPU acceleration
+* Build and run code on simulator, with GPU acceleration (Ubuntu only):
 
       $ ./run.py --gpu
 
@@ -34,7 +35,7 @@ NOTE: currently supported only on Linux and OSX.
 
       $ ./run.py --rosbag <path_to_rosbag>
 
-* Build and run code on Carla (GPU always enabled):
+* Build and run code on Carla (GPU always enabled, Ubuntu only):
 
       $ ./run.py --carla
 
