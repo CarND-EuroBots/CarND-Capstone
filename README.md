@@ -19,8 +19,8 @@ NOTE: currently supported only on Linux and OSX.
 
 * Install dependencies:
 
- - [docker](https://docs.docker.com/engine/installation/linux/docker-ce/ubuntu)
- - [nvidia-docker](https://github.com/NVIDIA/nvidia-docker#ubuntu-distributions)
+  - [docker](https://docs.docker.com/engine/installation/linux/docker-ce/ubuntu)
+  - [nvidia-docker](https://github.com/NVIDIA/nvidia-docker#ubuntu-distributions)
 
 * Build and run code on simulator (CPU only):
 
