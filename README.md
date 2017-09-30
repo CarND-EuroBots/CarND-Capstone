@@ -11,6 +11,10 @@ This is the project repo for the final project of the Udacity Self-Driving Car N
 | Oren Meiri                    | oren.meiri (at) gmail.com          |
 | Ivan Danov                    | ivan.geo.danov (at) gmail.com      |
 
+### Simulator Video
+
+[![IMAGE ALT TEXT HERE](http://img.youtube.com/vi/QFi0pbq8Zkc/0.jpg)](http://www.youtube.com/watch?v=QFi0pbq8Zkc)
+
 ### Quick setup using Docker
 
 Follow these steps to setup the development/runtime environment
