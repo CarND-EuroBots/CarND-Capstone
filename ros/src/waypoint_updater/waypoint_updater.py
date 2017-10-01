@@ -31,7 +31,7 @@ TODO (for Yousuf and Aaron): Stopline location for each traffic light.
 
 LOOKAHEAD_WPS = 100  # Number of waypoints we publish
 MIN_VEL = 1.
-STOP_AHEAD = 4  # Number of waypoints ahead of TL the car should stop
+STOP_AHEAD = 5  # Number of waypoints ahead of TL the car should stop
 
 
 class WaypointUpdater(object):
