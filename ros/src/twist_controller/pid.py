@@ -23,7 +23,7 @@ class PID(object):
 
         if sample_time > 1.0e-3:
             derivative = (error - self.last_error) / sample_time
-        else
+        else:
             derivative = 0.0
 
         val = self.kp * error + self.ki * self.int_val + self.kd * derivative
