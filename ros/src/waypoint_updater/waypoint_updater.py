@@ -144,7 +144,7 @@ class WaypointUpdater(object):
     def traffic_cb(self, msg):
         if msg.data != self.tl_idx:
             self.tl_idx = msg.data
-            if self.tl_idx > -1:
+            if self.tl_idx > -1 and self.waypoints is not None:
                 self.publish_next_tl(self.waypoints[self.tl_idx])
 
     def obstacle_cb(self, msg):
