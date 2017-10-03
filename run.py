@@ -59,11 +59,12 @@ def run(launch_file, gpu_enabled):
     """
     if gpu_enabled:
         docker_cmd = 'nvidia-docker'
-        docker_img = 'eurobots/carnd_capstone_gpu'
+        docker_img = 'eurobots/carnd_capstone_gpu:latest'
     else:
         docker_cmd = 'docker'
-        docker_img = 'eurobots/carnd_capstone'
+        docker_img = 'eurobots/carnd_capstone:latest'
 
+    subprocess.check_call(['docker', 'pull', docker_img])
     cmd = [docker_cmd, 'run', '--rm=true', '--tty=true', '--interactive=true',
            '--user={}:{}'.format(os.getuid(), os.getgid()),
            '--volume=/tmp:/.ros',
