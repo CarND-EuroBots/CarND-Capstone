@@ -58,7 +58,7 @@ def run(launch_file, gpu_enabled):
                gpu_enabled (boolean) True if GPU support activated
     """
     if gpu_enabled:
-        docker_cmd = 'nvidia-docker2'
+        docker_cmd = 'nvidia-docker'
         docker_img = 'eurobots/carnd_capstone_gpu'
     else:
         docker_cmd = 'docker'
