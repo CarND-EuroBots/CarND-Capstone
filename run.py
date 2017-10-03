@@ -58,7 +58,7 @@ def run(launch_file, gpu_enabled):
                gpu_enabled (boolean) True if GPU support activated
     """
     if gpu_enabled:
-        docker_cmd = 'nvidia-docker'
+        docker_cmd = 'nvidia-docker2'
         docker_img = 'eurobots/carnd_capstone_gpu'
     else:
         docker_cmd = 'docker'
@@ -79,7 +79,11 @@ def run(launch_file, gpu_enabled):
            'source ros/devel/setup.bash;'
            'roslaunch ros/launch/{}'.format(launch_file)]
 
-    subprocess.check_call(cmd)
+    try:
+        subprocess.check_call(cmd)
+    except Exception as e:
+        print('Error executing:\n{}'.format(' '.join(cmd)))
+        print(str(e))
 
 def parse_arguments():
     """ Parses the arguments sent from command line
