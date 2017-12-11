@@ -12,8 +12,7 @@ from styx_msgs.msg import TrafficLightArray, TrafficLight
 from styx_msgs.msg import Lane
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge
-from light_classification.tl_classifier_sim import TLClassifierSim
-from light_classification.tl_classifier_site import TLClassifierSite
+from light_classification.tl_classifier import TLClassifier
 
 STATE_COUNT_THRESHOLD = 3
 
@@ -31,7 +30,7 @@ class TLDetector(object):
     def __init__(self):
         rospy.init_node('tl_detector')
 
-        tl_classifier_class = rospy.get_param('~inference_class')
+        tl_classifier_model = rospy.get_param('~model')
 
         self.pose = None
         self.waypoints = None
@@ -49,7 +48,7 @@ class TLDetector(object):
         self.config = yaml.load(config_string)
 
         self.bridge = CvBridge()
-        self.light_classifier = globals()[tl_classifier_class]()
+        self.light_classifier = TLClassifier(tl_classifier_model)
         self.listener = tf.TransformListener()
 
         self.state = TrafficLight.UNKNOWN
@@ -301,6 +300,8 @@ class TLDetector(object):
             car_pos_wp_idx = self.get_closest_waypoint_idx(self.pose.pose)
             light_number, light_wp_idx = self.get_closest_tl_wp_idx(
                 car_pos_wp_idx, searching_dist_tl)
+
+        rospy.loginfo('WP IDX: {}, LN: {}'.format(light_wp_idx, light_number))
 
         # If waypoint has been found get traffic light state
         if light_wp_idx >= 0 and light_number >= 0 and \
