@@ -13,7 +13,9 @@ INFERENCE_MODEL_FOLDER = 'models'
 class TLClassifier(object):
     def __init__(self, model_pb_name):
         # Load classifier
-        model_path = os.path.join(INFERENCE_MODEL_FOLDER, model_pb_name)
+        model_path = os.path.normpath(os.path.join(os.path.dirname(__file__),
+                                      '..', INFERENCE_MODEL_FOLDER,
+                                      model_pb_name))
 
         # Join chunks in case of big model
         if os.path.isdir(model_path):
