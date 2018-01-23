@@ -2,7 +2,9 @@ import os
 import rospy
 import tensorflow as tf
 import numpy as np
+import time
 from styx_msgs.msg import TrafficLight
+from model_tools import merge_file
 
 MIN_CLASSIFICATION_CONFIDENCE = 0.85
 INFERENCE_MODEL_FOLDER = 'models'
@@ -12,6 +14,13 @@ class TLClassifier(object):
     def __init__(self, model_pb_name):
         # Load classifier
         model_path = os.path.join(INFERENCE_MODEL_FOLDER, model_pb_name)
+
+        # Join chunks in case of big model
+        if os.path.isdir(model_path):
+            model_path = merge_file(model_path)
+            rospy.loginfo('Merged model file into: {}'.format(model_path))
+
+        rospy.loginfo('Loading model {}...'.format(model_path))
 
         self.graph = tf.Graph()
         with self.graph.as_default():
@@ -54,10 +63,14 @@ class TLClassifier(object):
 
             # Run inference
             feed_dict = {self.image_tensor: image_np_expanded}
+
+            t1 = time.time()
             (scores, classes) = self.sess.run([self.detection_scores,
                                                self.detection_classes],
                                               feed_dict=feed_dict)
+            inference_time_ms = (time.time() - t1) * 1000.0
 
+            rospy.loginfo('Inference time: {} ms'.format(inference_time_ms))
             rospy.loginfo('TL scores: {}'.format(scores))
 
             # Loop over detections and keep the ones with high confidence

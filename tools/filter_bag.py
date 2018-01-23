@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 """
 This tool filters a rosbag resulting from a Udacity submission,
 to keep only the topics that are required to run our code on.
@@ -51,8 +52,8 @@ def parse_arguments():
     """
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('-i', '--input', dest='input_bag')
-    parser.add_argument('-o', '--output', dest='output_bag')
+    parser.add_argument('-i', '--input', required=True, dest='input_bag')
+    parser.add_argument('-o', '--output', required=True, dest='output_bag')
 
     return parser.parse_args()
 
