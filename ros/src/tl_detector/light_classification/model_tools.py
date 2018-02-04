@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import os
 import sys
 from functools import partial
@@ -61,3 +62,6 @@ def merge_file(directory, chunk_size=CHUNK_SIZE):
                     output.write(chunk)
 
     return filename
+
+if __name__ == '__main__':
+    split_file(filename=sys.argv[1])
