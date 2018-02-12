@@ -7,6 +7,7 @@ CHUNK_SIZE = 1024
 MAX_CHUNKS = 40000
 DIRECTORY_APPEND_NAME = '_chunks'
 
+
 def split_file(filename, chunk_size=CHUNK_SIZE, max_chunks=MAX_CHUNKS):
     """Split file into several files and save into another directory.
 
@@ -28,7 +29,9 @@ def split_file(filename, chunk_size=CHUNK_SIZE, max_chunks=MAX_CHUNKS):
     chunknum = 0
     with open(filename, 'rb') as infile:
         for chunk in iter(partial(infile.read, chunk_size * max_chunks), ''):
-            ofilename = os.path.join(directory, ('{}_{:04d}'.format(filename_basename, chunknum)))
+            ofilename = os.path.join(directory,
+                                     '{}_{:04d}'.format(filename_basename,
+                                                        chunknum))
             outfile = open(ofilename, 'wb')
             outfile.write(chunk)
             outfile.close()
@@ -62,6 +65,7 @@ def merge_file(directory, chunk_size=CHUNK_SIZE):
                     output.write(chunk)
 
     return filename
+
 
 if __name__ == '__main__':
     split_file(filename=sys.argv[1])
